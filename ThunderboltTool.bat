@@ -1,5 +1,5 @@
 @echo off
-set verno=BETA BUILD 5/24/12:2053
+set verno=ALPHA BUILD 5/24/12 9:20 PM EST
 title                                          HTC Thunderbolt Tool %verno%
 color 0b
 ::
@@ -9,7 +9,7 @@ color 0b
 :: To Public License, Version 2, as published by Sam Hocevar. See
 :: http://sam.zoy.org/wtfpl/COPYING for more details.
 :: 
-:: ***SKIPPING UPDATES, REMOVE THIS PRIOR TO RELEASE***
+:: *********************************SKIPPING UPDATES, REMOVE THIS PRIOR TO RELEASE******************************
 GOTO PROGRAM
 :: * Script update engine  *
 echo Checking for updates...
@@ -81,11 +81,11 @@ echo.
 echo MAIN MENU
 echo --------------------------------------------------------
 echo      1 - S-OFF and root
-echo      2 - Unroot *
-echo      3 - Recovery menu *
-echo      4 - Unbrick menu *
+echo      2 - Unroot
+echo      3 - Recovery menu 
+echo      4 - Unbrick menu
 echo      5 - Boot menu
-echo      6 - Extras *
+echo      6 - Extras
 echo      7 - Reload info
 echo      8 - HELP
 echo --------------------------------------------------------
@@ -139,19 +139,22 @@ exit
 cls
 echo Working...
 IF NOT EXIST support_files\unroot (
+cls
 echo.
 echo It seems you don't yet have the unroot files.
 echo Downloading now... This will take awhile...
 echo.
 :getunroot
-support_files\wget --quiet -O support_files\download\unrooot.zip http://dl.dropbox.com/u/61129367/Unroot.zip
+support_files\wget -O support_files\download\unroot.zip http://dl.dropbox.com/u/61129367/Unroot.zip
 support_files\md5sums support_files\download\unroot.zip>support_files\unroot.zip.md5
 set /p unrootmd5=<support_files\unroot.zip.md5
 IF "%unrootmd5%" NEQ "9EC2474DEE4F96F5BDBA5C1462F5D77E  support_files\download\unroot.zip" (
 cls
 echo Error downloading!
+RMDIR "support_files\unroot" /S /Q
 echo Downloading again...
 goto getunroot
+
 )
 support_files\unzip support_files\download\unroot.zip -d support_files\unroot >NUL
 )
@@ -357,8 +360,26 @@ GOTO EXTRAS
 ::
 
 :HELP
-echo HELP HERE~~~
+cls
 echo.
+echo.
+echo HELP
+echo --------------------------------------------------------
+echo   --Not recognizing the phone?
+echo      -Make sure USB Debugging and Stay Awake are
+echo       enabled in Settings - Apps - Development.
+echo      -Make sure HTC Sync, DoubleTwist, EasyTether,
+echo       Droid Explorer, etc. are uninstalled.
+echo.
+echo   --Not downloading anything?
+echo      -Make sure to disable PeerBlock.
+echo      -You may have a content filter or firewall
+echo       that is blocking access.
+echo   --Want to contact or thank me?
+echo      -Tweet me, @trter10.
+echo      -Email/GTalk me, lukeafrazier@gmail.com
+echo      -Buy me a Monster at http://tinyw.in/f340
+echo --------------------------------------------------------
 echo Press enter to return to the main menu...
 pause>NUL
 ::
