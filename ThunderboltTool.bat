@@ -505,5 +505,6 @@ del support_files\adbroot
 del support_files\bl
 del support_files\romver
 del support_files\here
+del support_files\Script-new-MD5.txt
 support_files\adb kill-server
 exit
