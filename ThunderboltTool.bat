@@ -1,5 +1,5 @@
 @echo off
-set verno=ALPHA BUILD 5/24/12 9:47 PM EST
+set verno=ALPHA BUILD 5/25/12 12:22 AM EST
 title                                          HTC Thunderbolt Tool %verno%
 color 0b
 ::
@@ -9,7 +9,7 @@ color 0b
 :: To Public License, Version 2, as published by Sam Hocevar. See
 :: http://sam.zoy.org/wtfpl/COPYING for more details.
 :: 
-:: *********************************SKIPPING UPDATES, REMOVE THIS PRIOR TO RELEASE******************************
+::*********************************SKIPPING UPDATES, REMOVE THIS PRIOR TO RELEASE******************************
 GOTO PROGRAM
 :: * Script update engine  *
 echo Checking for updates...
@@ -30,7 +30,6 @@ OTA.bat
 exit
 :PROGRAM
 IF NOT EXIST support_files\download (mkdir support_files\download)
-cls
 echo You are running the current version, %verno%.
 IF EXIST support_files\Script-MD5.txt (del support_files\Script-MD5.txt)
 IF EXIST support_files\Script-server-MD5.txt (del support_files\Script-server-MD5.txt)
@@ -173,7 +172,89 @@ exit
 ::
 
 :RECOVERY
-GOTO MAIN
+cls
+echo.
+echo.
+echo RECOVERY MENU
+echo --------------------------------------------------------
+echo      1 - Flash TWRP
+echo      2 - Flash TWRP and apply my ICS Theme
+echo      3 - Flash Regular CWM
+echo      4 - Flash CWM Touch
+echo      5 - Flash 4ext
+echo      6 - Flash RA_GNM 
+echo      7 - Flash RZRecovery
+echo      8 - Main Menu
+echo --------------------------------------------------------
+set /p m=Choose what you want to do or hit ENTER to exit. 
+IF %M%==1 (GOTO TWRP)
+IF %M%==2 (GOTO TWRP-ICS)
+IF %M%==3 (GOTO CWM-REG)
+IF %M%==4 (GOTO CWM-TOUCH)
+IF %M%==5 (GOTO 4EXT)
+IF %M%==6 (GOTO RA_GNM)
+IF %M%==7 (GOTO RZRecovery)
+IF %M%==8 (GOTO MAIN)
+GOTO EXIT
+
+:TWRP
+cls
+support_files\wget --quiet -O support_files\download\TWRP.img.md5 http://dl.dropbox.com/u/61129367/TWRP.img.md5
+support_files\md5sums support_files\download\TWRP.img>support_files\download\TWRP-here.md5
+set /p twrpdl=<support_files\download\TWRP.img.md5
+set /p twrphere=<support_files\download\TWRP-here.md5
+cls
+IF "%twrpdl%" == "%twrphere%" (GOTO flashtwrp)
+echo TWRP not found, or there is an update.
+echo Downloading TWRP...
+echo.
+support_files\wget --quiet -O support_files\download\TWRP.img http://dl.dropbox.com/u/61129367/TWRP.img
+GOTO TWRP
+:flashtwrp
+echo Flashing TWRP... Please wait...
+echo.
+del support_files\download\TWRP.img.md5
+del support_files\download\TWRP-here.md5
+support_files\adb reboot-bootloader
+support_files\fastboot flash recovery support_files\download\TWRP.img
+support_files\fastboot reboot
+support_files\adb wait-for-device
+support_files\adb reboot recovery
+echo.
+cls
+echo Phone is on its way to TWRP recovery.
+PING 1.1.1.1 -n 1 -w 4000 >NUL
+GOTO RECOVERY
+
+:CWM-REG
+cls
+support_files\wget --quiet -O support_files\download\cwmreg.img.md5 http://dl.dropbox.com/u/61129367/cwmreg.img.md5
+support_files\md5sums support_files\download\cwmreg.img>support_files\download\cwm-here.md5
+set /p cwmdl=<support_files\download\cwmreg.img.md5
+set /p cwmhere=<support_files\download\cwm-here.md5
+cls
+IF "%cwmdl%" == "%cwmhere%" (GOTO flashcwm)
+echo CWM not found, or there is an update.
+echo Downloading CWM...
+echo.
+support_files\wget --quiet -O support_files\download\cwmreg.img http://dl.dropbox.com/u/61129367/cwmreg.img
+GOTO CWM-REG
+:flashcwm
+echo Flashing CWM... Please wait...
+echo.
+del support_files\download\cwmreg.img.md5
+del support_files\download\cwm-here.md5
+support_files\adb reboot-bootloader
+support_files\fastboot flash recovery support_files\download\cwmreg.img
+support_files\fastboot reboot
+support_files\adb wait-for-device
+support_files\adb reboot recovery
+echo.
+cls
+echo Phone is on its way to ClockWorkMod recovery.
+PING 1.1.1.1 -n 1 -w 4000 >NUL
+GOTO RECOVERY
+
 ::
 :: -----------------------------------------------------------------------
 ::
@@ -253,14 +334,19 @@ echo EXTRAS MENU
 echo --------------------------------------------------------
 echo      1 - Block OTA Updates
 echo      2 - Re-enable OTA Updates
-echo      3 - Main Menu
-echo      4
+echo      3 - Update Superuser
+echo      4 - ADB Shell
+echo      5 - Main Menu
 echo --------------------------------------------------------
 set /p m=Choose what you want to do or hit ENTER to exit. 
 IF %M%==1 (GOTO OTABlock)
 IF %M%==2 (GOTO OTAEnable)
-IF %M%==3 (GOTO MAIN)
+IF %M%==3 (GOTO SUUpdates)
 IF %M%==4 (
+support_files\adb shell
+GOTO EXTRAS
+)
+IF %M%==5 (GOTO MAIN)
 GOTO EXIT
 :: ------------
 
@@ -355,6 +441,30 @@ echo.
 echo Done! Phone is rebooting.
 PING 1.1.1.1 -n 1 -w 2000 >NUL
 GOTO EXTRAS
+
+:SUUpdates
+cls
+IF EXIST support_files\download\su.zip (del support_files\download\su.zip)
+echo.
+echo Downloading latest SU files...
+support_files\wget --quiet -O support_files\download\su.zip http://downloads.androidsu.com/superuser/Superuser-3.0.7-efghi-signed.zip
+echo.
+echo Prepping phone...
+support_files\wget --quiet -O support_files\download\extendedcommand http://dl.dropbox.com/u/61129367/extendedcommand
+support_files\adb push support_files\download\extendedcommand /cache/recovery/
+support_files\adb push support_files\download\su.zip /sdcard/su.zip
+support_files\adb shell "echo install /sdcard/su.zip>/cache/recovery/openrecoveryscript"
+support_files\adb shell "echo mount /cache>/cache/recovery/openrecoveryscript"
+support_files\adb shell "echo cmd rm /cache/recovery/extendedcommand>/cache/recovery/openrecoveryscript"
+del support_files\download\su.zip
+del support_files\download\extendedcommand
+echo Rebooting to recovery...
+support_files\adb reboot recovery
+echo.
+echo File will flash and phone will reboot.
+PING 1.1.1.1 -n 1 -w 4000 >NUL
+GOTO EXTRAS
+
 ::
 :: -----------------------------------------------------------------------
 ::
@@ -370,6 +480,7 @@ echo      -Make sure USB Debugging and Stay Awake are
 echo       enabled in Settings - Apps - Development.
 echo      -Make sure HTC Sync, DoubleTwist, EasyTether,
 echo       Droid Explorer, etc. are uninstalled.
+echo      -Run Driver.exe, packaged with this.
 echo.
 echo   --Not downloading anything?
 echo      -Make sure to disable PeerBlock.
