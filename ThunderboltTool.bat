@@ -172,6 +172,7 @@ exit
 ::
 
 :RECOVERY
+set m=NULL
 cls
 echo.
 echo.
