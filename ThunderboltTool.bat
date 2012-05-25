@@ -1,5 +1,5 @@
 @echo off
-set verno=ALPHA BUILD 5/24/12 9:20 PM EST
+set verno=ALPHA BUILD 5/24/12 9:47 PM EST
 title                                          HTC Thunderbolt Tool %verno%
 color 0b
 ::
@@ -375,6 +375,7 @@ echo   --Not downloading anything?
 echo      -Make sure to disable PeerBlock.
 echo      -You may have a content filter or firewall
 echo       that is blocking access.
+echo.
 echo   --Want to contact or thank me?
 echo      -Tweet me, @trter10.
 echo      -Email/GTalk me, lukeafrazier@gmail.com
@@ -382,6 +383,7 @@ echo      -Buy me a Monster at http://tinyw.in/f340
 echo --------------------------------------------------------
 echo Press enter to return to the main menu...
 pause>NUL
+GOTO main
 ::
 :: -----------------------------------------------------------------------
 ::
