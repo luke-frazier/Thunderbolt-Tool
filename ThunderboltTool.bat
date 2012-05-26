@@ -1,5 +1,6 @@
 @echo off
-set verno=ALPHA BUILD 5/25/12 12:22 AM EST
+IF EXIST back.bat (del back.bat)
+set verno=ALPHA BUILD 5/25/12 10:48 PM EST
 title                                          HTC Thunderbolt Tool %verno%
 color 0b
 ::
@@ -29,11 +30,60 @@ MOVE support_files\OTA.bat OTA.bat >NUL
 OTA.bat
 exit
 :PROGRAM
+cls
 IF NOT EXIST support_files\download (mkdir support_files\download)
 echo You are running the current version, %verno%.
 IF EXIST support_files\Script-MD5.txt (del support_files\Script-MD5.txt)
 IF EXIST support_files\Script-server-MD5.txt (del support_files\Script-server-MD5.txt)
 echo.
+::Pre updates for mini-progs
+echo Checking for other updates...
+echo.
+::
+:firstupdateroot
+IF EXIST support_files\download\DowngradeBypass.zip (
+IF EXIST support_files\download\downgradebypass.zip.md5 (del support_files\download\downgradebypass.zip.md5)
+support_files\wget --quiet -O support_files\download\downgradebypass.zip.md5 http://dl.dropbox.com/u/61129367/DowngradeBypass.zip.md5
+support_files\md5sums support_files\download\downgradebypass.zip>support_files\root.md5
+fc /b support_files\download\downgradebypass.zip.md5 support_files\root.md5 >NUL
+IF errorlevel 1 (
+echo.
+echo Updating rooter...
+echo.
+IF EXIST support_files\root\ (RMDIR "support_files\root" /S /Q)
+support_files\wget --quiet -O support_files\download\DowngradeBypass.zip http://dl.dropbox.com/u/61129367/DowngradeBypass.zip
+support_files\md5sums support_files\download\DowngradeBypass.zip>support_files\root.md5
+fc /b support_files\download\downgradebypass.zip.md5 support_files\root.md5 >NUL
+IF errorlevel 1 (GOTO firstupdateroot)
+)
+IF NOT EXIST support_files\root (support_files\unzip support_files\download\DowngradeBypass.zip -d support_files\root >NUL)
+IF EXIST support_files\download\downgradebypass.zip.md5 (del support_files\download\downgradebypass.zip.md5)
+IF EXIST support_files\root.md5 (del support_files\root.md5)
+)
+:firstupdatetwrp
+IF EXIST support_files\download\TWRP.img (
+support_files\wget --quiet -O support_files\download\TWRP.img.md5 http://dl.dropbox.com/u/61129367/TWRP.img.md5
+support_files\md5sums support_files\download\TWRP.img>support_files\download\TWRP-here.md5
+fc /b support_files\download\TWRP-here.md5 support_files\download\TWRP.img.md5 >NUL
+IF errorlevel 1 (
+echo Updating TWRP...
+echo.
+support_files\wget --quiet -O support_files\download\TWRP.img http://dl.dropbox.com/u/61129367/TWRP.img
+GOTO firstupdatetwrp
+)
+)
+:skiptwrp
+::
+:DONE
+echo Done.
+PING 1.1.1.1 -n 1 -w 3000 >NUL
+echo.
+
+del support_files\adbroot
+del support_files\bl
+del support_files\romver
+del support_files\here
+cls
 support_files\adb kill-server
 support_files\adb start-server
 :MAIN
@@ -66,6 +116,7 @@ support_files\adb shell getprop ro.debuggable>support_files\adbroot
 set /p adbroot=<support_files\adbroot
 IF %adbroot%==1 (set adbrt=Yes) ELSE (set adbrt=No)
 :skip
+title                                          HTC Thunderbolt Tool %verno%
 set m=NULL
 cls
 echo                Welcome to the HTC Thunderbolt tool, by trter10.
@@ -104,13 +155,15 @@ GOTO EXIT
 :ROOT
 cls
 echo Working...
+IF NOT EXIST support_files\download\downgradebypass.zip (GOTO getDB)
 IF EXIST support_files\download\downgradebypass.zip.md5 (del support_files\download\downgradebypass.zip.md5)
 support_files\wget --quiet -O support_files\download\downgradebypass.zip.md5 http://dl.dropbox.com/u/61129367/DowngradeBypass.zip.md5
 support_files\md5sums support_files\download\downgradebypass.zip>support_files\root.md5
 fc /b support_files\download\downgradebypass.zip.md5 support_files\root.md5 >NUL
 IF "%errorlevel%" == "1" (
+:GetDB
 echo.
-echo It seems you don't yet have the root files, or there was an update.
+echo It seems you don't yet have the root files.
 echo Downloading now...
 echo.
 IF EXIST support_files\root\ (RMDIR "support_files\root" /S /Q)
@@ -119,6 +172,7 @@ support_files\md5sums support_files\download\DowngradeBypass.zip>support_files\r
 fc /b support_files\download\downgradebypass.zip.md5 support_files\root.md5 >NUL
 IF errorlevel 1 (GOTO ROOT)
 )
+title                                          HTC Thunderbolt Tool %verno%
 IF NOT EXIST support_files\root (support_files\unzip support_files\download\DowngradeBypass.zip -d support_files\root >NUL)
 IF EXIST support_files\download\downgradebypass.zip.md5 (del support_files\download\downgradebypass.zip.md5)
 IF EXIST support_files\root.md5 (del support_files\root.md5)
@@ -149,6 +203,7 @@ support_files\md5sums support_files\download\unroot.zip>support_files\unroot.zip
 set /p unrootmd5=<support_files\unroot.zip.md5
 IF "%unrootmd5%" NEQ "9EC2474DEE4F96F5BDBA5C1462F5D77E  support_files\download\unroot.zip" (
 cls
+title                                          HTC Thunderbolt Tool %verno%
 echo Error downloading!
 RMDIR "support_files\unroot" /S /Q
 echo Downloading again...
@@ -336,18 +391,31 @@ echo --------------------------------------------------------
 echo      1 - Block OTA Updates
 echo      2 - Re-enable OTA Updates
 echo      3 - Update Superuser
-echo      4 - ADB Shell
-echo      5 - Main Menu
+echo      4 - Run ADB/Fastboot cmd (Enter back to return)
+echo      5 - Install Busybox
+echo      6 - Main Menu
 echo --------------------------------------------------------
 set /p m=Choose what you want to do or hit ENTER to exit. 
 IF %M%==1 (GOTO OTABlock)
 IF %M%==2 (GOTO OTAEnable)
 IF %M%==3 (GOTO SUUpdates)
 IF %M%==4 (
-support_files\adb shell
-GOTO EXTRAS
+cls
+echo @echo off>back.bat
+echo del adb.exe>>back.bat
+echo del fastboot.exe>>back.bat
+echo del adbwinapi.dll>>back.bat
+echo del adbwinusbapi.dll>>back.bat
+echo ThunderboltTool.bat>>back.bat
+COPY support_files\adb.exe adb.exe
+COPY support_files\fastboot.exe fastboot.exe
+COPY support_files\adbwinapi.dll adbwinapi.dll
+COPY support_files\adbwinusbapi.dll adbwinusbapi.dll
+cls
+cmd
 )
-IF %M%==5 (GOTO MAIN)
+FI %M%==5 (GOTO bbox)
+IF %M%==6 (GOTO MAIN)
 GOTO EXIT
 :: ------------
 
@@ -367,7 +435,7 @@ support_files\adb shell mount /system
 support_files\adb shell rm /system/app/DmClient.apk
 support_files\adb reboot
 echo Done! Phone is rebooting.
-PING 1.1.1.1 -n 1 -w 2000 >NUL
+PING 1.1.1.1 -n 1 -w 4000 >NUL
 GOTO EXTRAS
 :blockrooted
 echo Waiting for device...
@@ -380,7 +448,7 @@ support_files\adb shell rm /system/app/DmClient.apk
 support_files\adb reboot
 echo.
 echo Done! Phone is rebooting.
-PING 1.1.1.1 -n 1 -w 2000 >NUL
+PING 1.1.1.1 -n 1 -w 4000 >NUL
 GOTO EXTRAS
 :: ------------
 
@@ -415,7 +483,7 @@ support_files\adb shell rm /system/app/DmClient.apk
 support_files\adb reboot
 echo.
 echo Done! Phone is rebooting.
-PING 1.1.1.1 -n 1 -w 2000 >NUL
+PING 1.1.1.1 -n 1 -w 4000 >NUL
 GOTO EXTRAS
 :enablerooted
 cls
@@ -440,7 +508,7 @@ support_files\adb shell chmod 644 /system/app/DmClient.apk
 support_files\adb reboot
 echo.
 echo Done! Phone is rebooting.
-PING 1.1.1.1 -n 1 -w 2000 >NUL
+PING 1.1.1.1 -n 1 -w 4000 >NUL
 GOTO EXTRAS
 
 :SUUpdates
@@ -455,16 +523,18 @@ support_files\wget --quiet -O support_files\download\extendedcommand http://dl.d
 support_files\adb push support_files\download\extendedcommand /cache/recovery/
 support_files\adb push support_files\download\su.zip /sdcard/su.zip
 support_files\adb shell "echo install /sdcard/su.zip>/cache/recovery/openrecoveryscript"
-support_files\adb shell "echo mount /cache>/cache/recovery/openrecoveryscript"
-support_files\adb shell "echo cmd rm /cache/recovery/extendedcommand>/cache/recovery/openrecoveryscript"
 del support_files\download\su.zip
 del support_files\download\extendedcommand
+echo.
 echo Rebooting to recovery...
 support_files\adb reboot recovery
 echo.
 echo File will flash and phone will reboot.
 PING 1.1.1.1 -n 1 -w 4000 >NUL
 GOTO EXTRAS
+
+:bbox
+GOTO MAIN
 
 ::
 :: -----------------------------------------------------------------------
@@ -501,10 +571,10 @@ GOTO main
 ::
 
 :EXIT
-del support_files\adbroot
-del support_files\bl
-del support_files\romver
-del support_files\here
-del support_files\Script-new-MD5.txt
+IF EXIST support_files\adbroot (del support_files\adbroot)
+IF EXIST support_files\bl (del support_files\bl)
+IF EXIST support_files\romver (del support_files\romver)
+IF EXIST support_files\here (del support_files\here)
+IF EXIST support_files\Script-new-MD5.txt (del support_files\Script-new-MD5.txt)
 support_files\adb kill-server
 exit
