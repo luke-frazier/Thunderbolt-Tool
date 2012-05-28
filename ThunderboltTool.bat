@@ -1,6 +1,6 @@
 @echo off
-set verno=ALPHA BUILD 5/28/12 1:28 AM EST
-title                                          HTC Thunderbolt Tool %verno%
+set verno=Alpha 5/28/12 7:45 PM EST
+title                                            HTC Thunderbolt Tool %verno%
 color 0b
 ::
 :: This program is free software. It comes without any warranty, to
@@ -123,7 +123,7 @@ support_files\adb shell getprop ro.debuggable>support_files\adbroot
 set /p adbroot=<support_files\adbroot
 IF %adbroot%==1 (set adbrt=Yes) ELSE (set adbrt=No)
 :skip
-title                                          HTC Thunderbolt Tool %verno%
+title                                            HTC Thunderbolt Tool %verno%
 set m=NULL
 cls
 IF "%bl%" == "1.04.2000" (set rooted=yes)
@@ -140,6 +140,8 @@ echo Phone information:
 echo.
 echo   ROM Version: %romver%
 echo         HBOOT: %bootloader%
+echo.
+echo *** Means this function does not work YET.
 echo.
 echo MAIN MENU
 echo --------------------------------------------------------
@@ -158,18 +160,20 @@ IF %M%==5 (GOTO HELP)
 GOTO EXIT
 
 :rootmain
-echo                Welcome to the HTC Thunderbolt tool, by trter10.
+echo                 Welcome to the HTC Thunderbolt tool, by trter10.
 echo.
 echo Phone information: 
 echo.
 echo   ROM Version: %romver%
 echo         HBOOT: %bootloader%
 echo.
+echo *** Means this function does not work YET.
+echo.
 echo MAIN MENU
 echo --------------------------------------------------------
 echo      1 - Unroot
 echo      2 - Recovery menu 
-echo      3 - Unbrick menu
+echo      3 - Unbrick menu ***
 echo      4 - Boot menu
 echo      5 - Extras
 echo      6 - Reload info
@@ -234,7 +238,7 @@ support_files\md5sums support_files\download\DowngradeBypass.zip>support_files\r
 fc /b support_files\download\downgradebypass.zip.md5 support_files\root.md5 >NUL
 IF errorlevel 1 (GOTO ROOT)
 )
-title                                          HTC Thunderbolt Tool %verno%
+title                                            HTC Thunderbolt Tool %verno%
 IF NOT EXIST support_files\root (support_files\unzip support_files\download\DowngradeBypass.zip -d support_files\root >NUL)
 IF EXIST support_files\download\downgradebypass.zip.md5 (del support_files\download\downgradebypass.zip.md5)
 IF EXIST support_files\root.md5 (del support_files\root.md5)
@@ -253,11 +257,14 @@ exit
 :UNROOT
 cls
 echo Working...
-IF NOT EXIST support_files\unroot (
+echo X = MsgBox("Please Enjoy the Nyan Cat while you wait for your download to complete.",0+64+4096,"Nyan Notice")>support_files\nyan.vbs
+IF NOT EXIST support_files\download\unroot.zip (
 cls
 echo.
 echo It seems you don't yet have the unroot files.
 echo Downloading now... This will take awhile...
+START support_files\nyan.vbs
+START support_files\NyanCat.gif
 echo.
 :getunroot
 support_files\wget -O support_files\download\unroot.zip http://dl.dropbox.com/u/61129367/Unroot.zip
@@ -266,15 +273,24 @@ set /p unrootmd5=<support_files\download\unroot.zip.md5
 del support_files\download\unroot.zip.md5
 IF "%unrootmd5%" NEQ "9EC2474DEE4F96F5BDBA5C1462F5D77E  support_files\download\unroot.zip" (
 cls
-title                                          HTC Thunderbolt Tool %verno%
+title                                            HTC Thunderbolt Tool %verno%
 echo Error downloading!
-RMDIR "support_files\unroot" /S /Q
+del support_files\download\unroot.zip
+RMDIR "support_files\unroot" /S /Q >NUL
 echo Downloading again...
 goto getunroot
-
 )
-support_files\unzip support_files\download\unroot.zip -d support_files\unroot >NUL
 )
+support_files\md5sums support_files\download\unroot.zip>support_files\download\unroot.zip.md5
+set /p unrootmd5=<support_files\download\unroot.zip.md5
+del support_files\download\unroot.zip.md5
+IF "%unrootmd5%" NEQ "9EC2474DEE4F96F5BDBA5C1462F5D77E  support_files\download\unroot.zip" (
+del support_files\download\unroot.zip
+GOTO UNROOT
+)
+cls
+IF NOT EXIST support_files\unroot (support_files\unzip support_files\download\unroot.zip -d support_files\unroot >NUL)
+del support_files\nyan.vbs
 del support_files\unroot.md5
 del support_files\adbroot
 del support_files\bl
@@ -297,12 +313,12 @@ echo.
 echo RECOVERY MENU
 echo --------------------------------------------------------
 echo      1 - Flash TWRP
-echo      2 - Flash TWRP and apply my ICS Theme
+echo      2 - Flash TWRP and apply my ICS Theme ***
 echo      3 - Flash Regular CWM
-echo      4 - Flash CWM Touch
-echo      5 - Flash 4ext
-echo      6 - Flash RA_GNM 
-echo      7 - Flash RZRecovery
+echo      4 - Flash CWM Touch ***
+echo      5 - Flash 4ext ***
+echo      6 - Flash RA_GNM ***
+echo      7 - Flash RZRecovery ***
 echo      8 - Main Menu
 echo --------------------------------------------------------
 set /p m=Choose what you want to do or hit ENTER to exit. 
@@ -374,6 +390,16 @@ echo Phone is on its way to ClockWorkMod recovery.
 PING 1.1.1.1 -n 1 -w 4000 >NUL
 GOTO RECOVERY
 
+:TWRP-ICS
+GOTO RECOVERY
+:CWM-TOUCH
+GOTO RECOVERY
+:4ext
+GOTO RECOVERY
+:RA_GNM
+GOTO RECOVERY
+:RZRECOVERY
+GOTO RECOVERY
 ::
 :: -----------------------------------------------------------------------
 ::
@@ -410,7 +436,8 @@ GOTO boot
 IF %M%==2 (
 cls
 echo Please wait...
-support_files\adb shell killall system_server
+support_files\adb shell stop
+support_files\adb shell start
 GOTO boot
 )
 IF %M%==3 (
@@ -521,7 +548,7 @@ COPY support_files\adbwinusbapi.dll adbwinusbapi.dll
 cls
 cmd
 )
-FI %M%==4 (GOTO bbox)
+IF %M%==4 (GOTO bbox)
 IF %M%==5 (GOTO MAIN)
 GOTO EXIT
 :: ------------
@@ -618,7 +645,6 @@ echo ------------------------------
 echo.
 echo Rebooting to recovery...
 echo.
-support_files\adb reboot recovery
 echo Waiting for recovery...
 echo.
 IF EXIST support_files\here (del support_files\here)
@@ -685,8 +711,66 @@ PING 1.1.1.1 -n 1 -w 4000 >NUL
 GOTO EXTRAS
 
 :bbox
-GOTO MAIN
-
+cls
+echo ------------------------------
+echo        Busybox installer
+echo ------------------------------
+echo.
+IF NOT EXIST support_files\download\busybox (
+echo Downloading busybox...
+support_files\wget --quiet -O support_files\download\busybox http://dl.dropbox.com/u/61129367/busybox
+echo.
+)
+IF "%adbroot%" == "1" (GOTO bboxrooted)
+echo Rebooting to recovery...
+echo.
+support_files\adb reboot recovery
+:waitforrecobbox
+cls
+echo ------------------------------
+echo        Busybox installer
+echo ------------------------------
+echo.
+echo Rebooting to recovery...
+echo.
+echo Waiting for recovery...
+echo.
+IF EXIST support_files\here (del support_files\here)
+support_files\adb shell echo a>support_files\here
+set here=NULL
+set /p here=<support_files\here
+if "%here%" NEQ "a" (GOTO waitforrecobbox)
+PING 1.1.1.1 -n 1 -w 4000 >NUL
+echo Working...
+support_files\adb shell mount /system
+support_files\adb shell rm -r /system/xbin/busybox 2>&1 > /dev/null
+support_files\adb push support_files\download\busybox /system/xbin/
+support_files\adb shell chown root.shell /system/xbin/busybox
+support_files\adb shell chmod 04755 /system/xbin/busybox
+support_files\adb shell ./system/xbin/busybox --install -s /system/xbin
+echo.
+echo Done! Rebooting.
+support_files\adb reboot
+PING 1.1.1.1 -n 1 -w 4000 >NUL
+GOTO EXTRAS
+:bboxrooted
+cls
+echo ------------------------------
+echo        Busybox installer
+echo ------------------------------
+echo.
+echo Working...
+support_files\adb remount
+support_files\adb shell rm -r /system/xbin/busybox 2>&1 > /dev/null
+support_files\adb push support_files\download\busybox /system/xbin/
+support_files\adb shell chown root.shell /system/xbin/busybox
+support_files\adb shell chmod 04755 /system/xbin/busybox
+support_files\adb shell ./system/xbin/busybox --install -s /system/xbin
+echo.
+echo Done! Rebooting.
+support_files\adb reboot
+PING 1.1.1.1 -n 1 -w 4000 >NUL
+GOTO EXTRAS
 ::
 :: -----------------------------------------------------------------------
 ::
@@ -710,9 +794,10 @@ echo      -You may have a content filter or firewall
 echo       that is blocking access.
 echo.
 echo   --Want to contact or thank me?
-echo      -Tweet me, @trter10.
+echo      -Tweet me, @trter10
 echo      -Email/GTalk me, lukeafrazier@gmail.com
 echo      -Buy me a Monster at http://tinyw.in/f340
+echo      -Press the thanks button on my post :)
 echo --------------------------------------------------------
 echo Press enter to return to the main menu...
 pause>NUL
