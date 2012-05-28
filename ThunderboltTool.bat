@@ -1,5 +1,5 @@
 @echo off
-set verno=ALPHA BUILD 5/28/12 1:06 AM EST
+set verno=ALPHA BUILD 5/28/12 1:28 AM EST
 title                                          HTC Thunderbolt Tool %verno%
 color 0b
 ::
