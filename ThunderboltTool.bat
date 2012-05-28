@@ -1,6 +1,5 @@
 @echo off
-IF EXIST back.bat (del back.bat)
-set verno=ALPHA BUILD 5/25/12 10:48 PM EST
+set verno=ALPHA BUILD 5/28/12 1:06 AM EST
 title                                          HTC Thunderbolt Tool %verno%
 color 0b
 ::
@@ -10,6 +9,14 @@ color 0b
 :: To Public License, Version 2, as published by Sam Hocevar. See
 :: http://sam.zoy.org/wtfpl/COPYING for more details.
 :: 
+::Removing unneded files
+IF EXIST support_files\download\TWRP.img.md5 (del support_files\download\TWRP.img.md5)
+IF EXIST support_files\download\TWRP-here.md5 (del support_files\download\TWRP-here.md5)
+IF EXIST back.bat (del back.bat)
+IF EXIST adbwinapi.dll (del adbwinapi.dll)
+IF EXIST adbwinusbapi.dll (del adbwinusbapi.dll)
+IF EXIST fastboot.exe (del fastboot.exe)
+IF EXIST adb.exe (del adb.exe)
 ::*********************************SKIPPING UPDATES, REMOVE THIS PRIOR TO RELEASE******************************
 GOTO PROGRAM
 :: * Script update engine  *
@@ -92,13 +99,13 @@ IF EXIST support_files\adbroot (del support_files\adbroot)
 IF EXIST support_files\bl (del support_files\bl)
 IF EXIST support_files\romver (del support_files\romver)
 IF EXIST support_files\here (del support_files\here)
+set romver=Unknown
+set bootloader=Unknown
+set adbrt=Unknown
 support_files\adb shell echo a>support_files\here
 set here=NULL
 set /p here=<support_files\here
 if "%here%" == "a" (goto MAIN2)
-set romver=Unknown
-set bootloader=Unknown
-set adbrt=Unknown
 set warn=nc
 GOTO skip
 :MAIN2
@@ -119,35 +126,90 @@ IF %adbroot%==1 (set adbrt=Yes) ELSE (set adbrt=No)
 title                                          HTC Thunderbolt Tool %verno%
 set m=NULL
 cls
+IF "%bl%" == "1.04.2000" (set rooted=yes)
+IF "%bl%" == "6.04.1002" (set rooted=yes)
+IF "%bl%" == "1.04.0000" (set rooted=no)
+IF "%bl%" == "1.05.0000" (set rooted=no)
+IF "%warn%" == "nc" (GOTO nophonemain)
+IF "%rooted%" == "no" (GOTO stockmain)
+IF "%rooted%" == "yes" (GOTO rootmain)
+:stockmain
 echo                Welcome to the HTC Thunderbolt tool, by trter10.
 echo.
 echo Phone information: 
 echo.
-IF "%warn%"=="nc" (echo                          * WARNING: DEVICE NOT CONNECTED *)
 echo   ROM Version: %romver%
-echo    Bootloader: %bootloader%
-echo    ADB rooted: %adbrt%
+echo         HBOOT: %bootloader%
 echo.
 echo MAIN MENU
 echo --------------------------------------------------------
 echo      1 - S-OFF and root
-echo      2 - Unroot
-echo      3 - Recovery menu 
-echo      4 - Unbrick menu
-echo      5 - Boot menu
-echo      6 - Extras
-echo      7 - Reload info
-echo      8 - HELP
+echo      2 - Boot menu
+echo      3 - Extras
+echo      4 - Reload info
+echo      5 - HELP
 echo --------------------------------------------------------
 set /p m=Choose what you want to do or hit ENTER to exit. 
 IF %M%==1 (GOTO ROOT)
-IF %M%==2 (GOTO UNROOT)
-IF %M%==3 (GOTO RECOVERY)
-IF %M%==4 (GOTO UNBRICK)
-IF %M%==5 (GOTO BOOT)
-IF %M%==6 (GOTO EXTRAS)
-IF %M%==7 (GOTO MAIN)
-IF %M%==8 (GOTO HELP)
+IF %M%==2 (GOTO BOOT)
+IF %M%==3 (GOTO EXTRAS)
+IF %M%==4 (GOTO MAIN)
+IF %M%==5 (GOTO HELP)
+GOTO EXIT
+
+:rootmain
+echo                Welcome to the HTC Thunderbolt tool, by trter10.
+echo.
+echo Phone information: 
+echo.
+echo   ROM Version: %romver%
+echo         HBOOT: %bootloader%
+echo.
+echo MAIN MENU
+echo --------------------------------------------------------
+echo      1 - Unroot
+echo      2 - Recovery menu 
+echo      3 - Unbrick menu
+echo      4 - Boot menu
+echo      5 - Extras
+echo      6 - Reload info
+echo      7 - HELP
+echo --------------------------------------------------------
+set /p m=Choose what you want to do or hit ENTER to exit. 
+IF %M%==1 (GOTO UNROOT)
+IF %M%==2 (GOTO RECOVERY)
+IF %M%==3 (GOTO UNBRICK)
+IF %M%==4 (GOTO BOOT)
+IF %M%==5 (GOTO EXTRAS)
+IF %M%==6 (GOTO MAIN)
+IF %M%==7 (GOTO HELP)
+GOTO EXIT
+
+:nophonemain
+set m=NULL
+echo                Welcome to the HTC Thunderbolt tool, by trter10.
+echo.
+echo                          * WARNING: DEVICE NOT CONNECTED *
+echo.
+echo --------------------------------------------------------
+echo   --Not recognizing the phone!
+echo.
+echo      -Make sure USB Debugging and Stay Awake are
+echo       enabled in Settings - Apps - Development.
+echo.
+echo      -Make sure HTC Sync, DoubleTwist, EasyTether,
+echo       Droid Explorer, etc. are uninstalled.
+echo.
+echo      -Unplug the phone and plug it back in.
+echo.
+echo      -Try a different USB Port and/or cable.
+echo.
+echo      -Disable and re-enable USB Debugging.
+echo.
+echo      -Run Driver.exe, packaged with this.
+echo --------------------------------------------------------
+set /p m=Press 1 to recheck phone status or hit ENTER to exit. 
+IF %M%==1 (GOTO main)
 GOTO EXIT
 ::
 :: -----------------------------------------------------------------------
@@ -199,8 +261,9 @@ echo Downloading now... This will take awhile...
 echo.
 :getunroot
 support_files\wget -O support_files\download\unroot.zip http://dl.dropbox.com/u/61129367/Unroot.zip
-support_files\md5sums support_files\download\unroot.zip>support_files\unroot.zip.md5
-set /p unrootmd5=<support_files\unroot.zip.md5
+support_files\md5sums support_files\download\unroot.zip>support_files\download\unroot.zip.md5
+set /p unrootmd5=<support_files\download\unroot.zip.md5
+del support_files\download\unroot.zip.md5
 IF "%unrootmd5%" NEQ "9EC2474DEE4F96F5BDBA5C1462F5D77E  support_files\download\unroot.zip" (
 cls
 title                                          HTC Thunderbolt Tool %verno%
@@ -261,7 +324,7 @@ set /p twrpdl=<support_files\download\TWRP.img.md5
 set /p twrphere=<support_files\download\TWRP-here.md5
 cls
 IF "%twrpdl%" == "%twrphere%" (GOTO flashtwrp)
-echo TWRP not found, or there is an update.
+echo TWRP not found.
 echo Downloading TWRP...
 echo.
 support_files\wget --quiet -O support_files\download\TWRP.img http://dl.dropbox.com/u/61129367/TWRP.img
@@ -320,10 +383,11 @@ GOTO MAIN
 ::
 :: -----------------------------------------------------------------------
 ::
-
 :BOOT
 set m=NULL
 cls
+IF "%rooted%" NEQ "yes" (GOTO stockBOOT)
+:rootBOOT
 echo.
 echo.
 echo BOOT MENU
@@ -356,7 +420,7 @@ support_files\adb reboot recovery
 goto boot
 )
 IF %M%==4 (
-
+cls
 echo Please wait...
 support_files\adb reboot-bootloader
 goto boot
@@ -377,6 +441,47 @@ goto boot
 )
 IF %M%==7 (GOTO main)
 GOTO EXIT
+
+:stockboot
+echo.
+echo.
+echo BOOT MENU
+echo --------------------------------------------------------
+echo      1 - Reboot
+echo      2 - Reboot Recovery
+echo      3 - Reboot to fastboot
+echo      4 - Power off
+echo      5 - Main Menu
+echo --------------------------------------------------------
+set /p m=Choose what you want to do or hit ENTER to exit. 
+IF %M%==1 (
+cls
+echo Please wait...
+support_files\adb reboot
+GOTO boot
+)
+IF %M%==2 (
+cls
+echo Please wait...
+support_files\adb reboot recovery
+goto boot
+)
+IF %M%==3 (
+cls
+echo Please wait...
+support_files\adb reboot-bootloader
+goto boot
+)
+
+IF %M%==4 (
+cls
+echo Please wait...
+support_files\adb reboot-bootloader
+support_files\fastboot oem powerdown
+goto boot
+)
+IF %M%==5 (GOTO main)
+GOTO EXIT
 ::
 :: -----------------------------------------------------------------------
 ::
@@ -390,17 +495,19 @@ echo EXTRAS MENU
 echo --------------------------------------------------------
 echo      1 - Block OTA Updates
 echo      2 - Re-enable OTA Updates
-echo      3 - Update Superuser
-echo      4 - Run ADB/Fastboot cmd (Enter back to return)
-echo      5 - Install Busybox
-echo      6 - Main Menu
+::echo      3 - Update Superuser
+echo      3 - Run ADB/Fastboot cmd (Enter back to return)
+echo      4 - Install Busybox
+echo      5 - Main Menu
 echo --------------------------------------------------------
 set /p m=Choose what you want to do or hit ENTER to exit. 
 IF %M%==1 (GOTO OTABlock)
 IF %M%==2 (GOTO OTAEnable)
-IF %M%==3 (GOTO SUUpdates)
-IF %M%==4 (
+::IF %M%==3 (GOTO SUUpdates)
+IF %M%==3 (
 cls
+title Command Prompt
+color 07
 echo @echo off>back.bat
 echo del adb.exe>>back.bat
 echo del fastboot.exe>>back.bat
@@ -414,50 +521,79 @@ COPY support_files\adbwinusbapi.dll adbwinusbapi.dll
 cls
 cmd
 )
-FI %M%==5 (GOTO bbox)
-IF %M%==6 (GOTO MAIN)
+FI %M%==4 (GOTO bbox)
+IF %M%==5 (GOTO MAIN)
 GOTO EXIT
 :: ------------
 
 :OTABlock
+IF "%adbroot%"=="1" (GOTO blockrooted)
 cls
 echo ------------------------------
-echo      OTA Update disabler
+echo     OTA Update Disabler
 echo ------------------------------
-IF "%adbroot%"=="1" (GOTO blockrooted)
+echo.
 echo Rebooting to recovery...
 support_files\adb reboot recovery
-echo Press enter when in recovery.
-pause >NUL
+:waitforrecodisable
+cls
+echo ------------------------------
+echo     OTA Update Disabler
+echo ------------------------------
 echo.
+echo Rebooting to recovery...
+echo.
+support_files\adb reboot recovery
+echo Waiting for recovery...
+echo.
+IF EXIST support_files\here (del support_files\here)
+support_files\adb shell echo a>support_files\here
+set here=NULL
+set /p here=<support_files\here
+if "%here%" NEQ "a" (GOTO waitforrecodisable)
+PING 1.1.1.1 -n 1 -w 4000 >NUL
 echo Working...
 support_files\adb shell mount /system
 support_files\adb shell rm /system/app/DmClient.apk
 support_files\adb reboot
+echo.
 echo Done! Phone is rebooting.
 PING 1.1.1.1 -n 1 -w 4000 >NUL
 GOTO EXTRAS
-:blockrooted
-echo Waiting for device...
-support_files\adb wait-for-device
-echo Found!
+:enablerooted
+cls
+IF NOT EXIST support_files\download\DmClient.apk (
+echo Downloading necessary file...
+support_files\wget --quiet -O support_files\download\DmClient.apk http://dl.dropbox.com/u/61129367/DmClient.apk
+support_files\md5sums support_files\download\DmClient.apk>support_files\download\DmClient.apk.md5
+set /p otamd5=<support_files\download\DmClient.apk.md5
+IF "%otamd5%" NEQ "CB8B423E04EDEE0C0E3F601E88C9E046  support_files\download\DmClient.apk" (
+del support_files\download\DmClient.apk
+del support_files\download\DmClient.apk.md5
+cls
+GOTO enablerooted
+)
+IF EXIST support_files\download\DmClient.apk.md5 (del support_files\download\DmClient.apk.md5)
 echo.
+)
 echo Working...
 support_files\adb remount >NUL
-support_files\adb shell rm /system/app/DmClient.apk
+support_files\adb push support_files\download\DmClient.apk /system/app/DmClient.apk >NUL
+support_files\adb shell chmod 644 /system/app/DmClient.apk
 support_files\adb reboot
 echo.
 echo Done! Phone is rebooting.
 PING 1.1.1.1 -n 1 -w 4000 >NUL
 GOTO EXTRAS
+
 :: ------------
 
 :OTAEnable
+IF "%adbroot%"=="1" (GOTO enablerooted)
 cls
 echo ------------------------------
 echo     OTA Update re-enabler
 echo ------------------------------
-IF "%adbroot%"=="1" (GOTO enablerooted)
 IF NOT EXIST support_files\download\DmClient.apk (
 echo Downloading necessary file...
 support_files\wget --quiet -O support_files\download\DmClient.apk http://dl.dropbox.com/u/61129367/DmClient.apk
@@ -474,12 +610,27 @@ IF EXIST support_files\download\DmClient.apk.md5 (del support_files\download\DmC
 )
 echo Rebooting to recovery...
 support_files\adb reboot recovery
-echo Press enter when in recovery.
-pause >NUL
+:waitforreco
+cls
+echo ------------------------------
+echo     OTA Update re-enabler
+echo ------------------------------
 echo.
+echo Rebooting to recovery...
+echo.
+support_files\adb reboot recovery
+echo Waiting for recovery...
+echo.
+IF EXIST support_files\here (del support_files\here)
+support_files\adb shell echo a>support_files\here
+set here=NULL
+set /p here=<support_files\here
+if "%here%" NEQ "a" (GOTO waitforreco)
+PING 1.1.1.1 -n 1 -w 4000 >NUL
 echo Working...
 support_files\adb shell mount /system
-support_files\adb shell rm /system/app/DmClient.apk
+support_files\adb push support_files\download\DmClient.apk /system/app/DmClient.apk
+support_files\adb shell chmod 644 /system/app/DmClient.apk
 support_files\adb reboot
 echo.
 echo Done! Phone is rebooting.
@@ -571,6 +722,8 @@ GOTO main
 ::
 
 :EXIT
+IF EXIST support_files\download\TWRP.img.md5 (del support_files\download\TWRP.img.md5)
+IF EXIST support_files\download\TWRP-here.md5 (del support_files\download\TWRP-here.md5)
 IF EXIST support_files\adbroot (del support_files\adbroot)
 IF EXIST support_files\bl (del support_files\bl)
 IF EXIST support_files\romver (del support_files\romver)
