@@ -1,5 +1,5 @@
 @echo off
-set verno=Alpha 5/28/12 7:45 PM EST
+set verno=Engineering 5/30/12 12:00 AM EST
 title                                            HTC Thunderbolt Tool %verno%
 color 0b
 ::
@@ -43,49 +43,6 @@ echo You are running the current version, %verno%.
 IF EXIST support_files\Script-MD5.txt (del support_files\Script-MD5.txt)
 IF EXIST support_files\Script-server-MD5.txt (del support_files\Script-server-MD5.txt)
 echo.
-::Pre updates for mini-progs
-echo Checking for other updates...
-echo.
-::
-:firstupdateroot
-IF EXIST support_files\download\DowngradeBypass.zip (
-IF EXIST support_files\download\downgradebypass.zip.md5 (del support_files\download\downgradebypass.zip.md5)
-support_files\wget --quiet -O support_files\download\downgradebypass.zip.md5 http://dl.dropbox.com/u/61129367/DowngradeBypass.zip.md5
-support_files\md5sums support_files\download\downgradebypass.zip>support_files\root.md5
-fc /b support_files\download\downgradebypass.zip.md5 support_files\root.md5 >NUL
-IF errorlevel 1 (
-echo.
-echo Updating rooter...
-echo.
-IF EXIST support_files\root\ (RMDIR "support_files\root" /S /Q)
-support_files\wget --quiet -O support_files\download\DowngradeBypass.zip http://dl.dropbox.com/u/61129367/DowngradeBypass.zip
-support_files\md5sums support_files\download\DowngradeBypass.zip>support_files\root.md5
-fc /b support_files\download\downgradebypass.zip.md5 support_files\root.md5 >NUL
-IF errorlevel 1 (GOTO firstupdateroot)
-)
-IF NOT EXIST support_files\root (support_files\unzip support_files\download\DowngradeBypass.zip -d support_files\root >NUL)
-IF EXIST support_files\download\downgradebypass.zip.md5 (del support_files\download\downgradebypass.zip.md5)
-IF EXIST support_files\root.md5 (del support_files\root.md5)
-)
-:firstupdatetwrp
-IF EXIST support_files\download\TWRP.img (
-support_files\wget --quiet -O support_files\download\TWRP.img.md5 http://dl.dropbox.com/u/61129367/TWRP.img.md5
-support_files\md5sums support_files\download\TWRP.img>support_files\download\TWRP-here.md5
-fc /b support_files\download\TWRP-here.md5 support_files\download\TWRP.img.md5 >NUL
-IF errorlevel 1 (
-echo Updating TWRP...
-echo.
-support_files\wget --quiet -O support_files\download\TWRP.img http://dl.dropbox.com/u/61129367/TWRP.img
-GOTO firstupdatetwrp
-)
-)
-:skiptwrp
-::
-:DONE
-echo Done.
-PING 1.1.1.1 -n 1 -w 3000 >NUL
-echo.
-
 del support_files\adbroot
 del support_files\bl
 del support_files\romver
@@ -220,6 +177,10 @@ GOTO EXIT
 ::
 :ROOT
 cls
+echo ------------------------------
+echo             Rooter            
+echo ------------------------------
+echo.
 echo Working...
 IF NOT EXIST support_files\download\downgradebypass.zip (GOTO getDB)
 IF EXIST support_files\download\downgradebypass.zip.md5 (del support_files\download\downgradebypass.zip.md5)
@@ -256,6 +217,10 @@ exit
 
 :UNROOT
 cls
+echo ------------------------------
+echo            Unrooter            
+echo ------------------------------
+echo.
 echo Working...
 echo X = MsgBox("Please Enjoy the Nyan Cat while you wait for your download to complete.",0+64+4096,"Nyan Notice")>support_files\nyan.vbs
 IF NOT EXIST support_files\download\unroot.zip (
@@ -274,6 +239,10 @@ del support_files\download\unroot.zip.md5
 IF "%unrootmd5%" NEQ "9EC2474DEE4F96F5BDBA5C1462F5D77E  support_files\download\unroot.zip" (
 cls
 title                                            HTC Thunderbolt Tool %verno%
+echo ------------------------------
+echo            Unrooter            
+echo ------------------------------
+echo.
 echo Error downloading!
 del support_files\download\unroot.zip
 RMDIR "support_files\unroot" /S /Q >NUL
@@ -313,9 +282,9 @@ echo.
 echo RECOVERY MENU
 echo --------------------------------------------------------
 echo      1 - Flash TWRP
-echo      2 - Flash TWRP and apply my ICS Theme ***
+echo      2 - Apply my ICS TWRP Theme
 echo      3 - Flash Regular CWM
-echo      4 - Flash CWM Touch ***
+echo      4 - Flash CWM Touch
 echo      5 - Flash 4ext ***
 echo      6 - Flash RA_GNM ***
 echo      7 - Flash RZRecovery ***
@@ -334,11 +303,19 @@ GOTO EXIT
 
 :TWRP
 cls
+echo ------------------------------
+echo           Flash TWRP         
+echo ------------------------------
+echo.
 support_files\wget --quiet -O support_files\download\TWRP.img.md5 http://dl.dropbox.com/u/61129367/TWRP.img.md5
 support_files\md5sums support_files\download\TWRP.img>support_files\download\TWRP-here.md5
 set /p twrpdl=<support_files\download\TWRP.img.md5
 set /p twrphere=<support_files\download\TWRP-here.md5
 cls
+echo ------------------------------
+echo           Flash TWRP         
+echo ------------------------------
+echo.
 IF "%twrpdl%" == "%twrphere%" (GOTO flashtwrp)
 echo TWRP not found.
 echo Downloading TWRP...
@@ -357,17 +334,29 @@ support_files\adb wait-for-device
 support_files\adb reboot recovery
 echo.
 cls
+echo ------------------------------
+echo           Flash TWRP         
+echo ------------------------------
+echo.
 echo Phone is on its way to TWRP recovery.
 PING 1.1.1.1 -n 1 -w 4000 >NUL
 GOTO RECOVERY
 
 :CWM-REG
 cls
+echo ------------------------------
+echo           Flash CWM       
+echo ------------------------------
+echo.
 support_files\wget --quiet -O support_files\download\cwmreg.img.md5 http://dl.dropbox.com/u/61129367/cwmreg.img.md5
 support_files\md5sums support_files\download\cwmreg.img>support_files\download\cwm-here.md5
 set /p cwmdl=<support_files\download\cwmreg.img.md5
 set /p cwmhere=<support_files\download\cwm-here.md5
 cls
+echo ------------------------------
+echo           Flash CWM        
+echo ------------------------------
+echo.
 IF "%cwmdl%" == "%cwmhere%" (GOTO flashcwm)
 echo CWM not found, or there is an update.
 echo Downloading CWM...
@@ -386,14 +375,93 @@ support_files\adb wait-for-device
 support_files\adb reboot recovery
 echo.
 cls
+echo ------------------------------
+echo           Flash CWM         
+echo ------------------------------
+echo.
 echo Phone is on its way to ClockWorkMod recovery.
 PING 1.1.1.1 -n 1 -w 4000 >NUL
 GOTO RECOVERY
 
 :TWRP-ICS
+cls
+echo ------------------------------
+echo         TWRP ICS Theme        
+echo ------------------------------
+echo.
+support_files\wget --quiet -O support_files\download\ICS.zip.md5 http://dl.dropbox.com/u/61129367/ICS.zip.md5
+support_files\md5sums support_files\download\ICS.zip>support_files\download\ICS.md5
+set /p themedl=<support_files\download\ICS.zip.md5
+set /p themehere=<support_files\download\ICS.md5
+cls
+echo ------------------------------
+echo         TWRP ICS Theme        
+echo ------------------------------
+echo.
+IF "%themedl%" == "%themehere%" (GOTO applytheme)
+echo Theme not found, or there is an update.
+echo Downloading theme...
+echo.
+support_files\wget --quiet -O support_files\download\ICS.zip http://dl.dropbox.com/u/61129367/ICS.zip
+GOTO TWRP-ICS
+:applytheme
+echo Applying theme...
+echo.
+del support_files\download\ICS.md5
+del support_files\download\ICS.zip.md5
+support_files\adb shell mkdir /sdcard/TWRP/theme
+support_files\adb push support_files\download\ICS.zip /sdcard/TWRP/theme/ui.zip
+support_files\adb reboot recovery
+echo.
+cls
+echo ------------------------------
+echo         TWRP ICS Theme        
+echo ------------------------------
+echo.
+echo Phone is on its way to TWRP recovery.
+PING 1.1.1.1 -n 1 -w 4000 >NUL
 GOTO RECOVERY
 :CWM-TOUCH
+cls
+echo ------------------------------
+echo        Flash CWM Touch       
+echo ------------------------------
+echo.
+support_files\wget --quiet -O support_files\download\CWMTouch.img.md5 http://dl.dropbox.com/u/61129367/CWMTouch.img.md5
+support_files\md5sums support_files\download\CWMTouch.img>support_files\download\CWMTouch.md5
+set /p cwmtouchdl=<support_files\download\CWMTouch.img.md5
+set /p cwmtouchhere=<support_files\download\CWMTouch.md5
+cls
+echo ------------------------------
+echo        Flash CWM Touch       
+echo ------------------------------
+echo.
+IF "%cwmtouchdl%" == "%cwmtouchhere%" (GOTO flashcwmtouch)
+echo CWM Touch not found, or there is an update.
+echo Downloading CWM Touch...
+echo.
+support_files\wget --quiet -O support_files\download\CWMTouch.img http://dl.dropbox.com/u/61129367/CWMTouch.img
+GOTO CWM-TOUCH
+:flashcwmtouch
+echo Flashing CWM Touch... Please wait...
+echo.
+del support_files\download\CWMTouch.img.md5
+del support_files\download\CWMTouch.md5
+support_files\adb reboot-bootloader
+support_files\fastboot flash recovery support_files\download\CWMTouch.img
+support_files\fastboot reboot
+support_files\adb wait-for-device
+support_files\adb reboot recovery
+echo.
+cls
+echo ------------------------------
+echo        Flash CWM Touch       
+echo ------------------------------
+echo.
+echo Phone is on its way to ClockWorkMod Touch recovery.
+PING 1.1.1.1 -n 1 -w 4000 >NUL
 GOTO RECOVERY
+
 :4ext
 GOTO RECOVERY
 :RA_GNM
@@ -406,6 +474,19 @@ GOTO RECOVERY
 
 :UNBRICK
 GOTO MAIN
+echo UNBRICK MENU
+echo --------------------------------------------------------
+echo  How did you "brick"?
+echo.
+echo      1 - OTA update
+echo      2 - Installing a ROM
+echo      3 - 
+echo      4 -
+echo      5 -
+echo      6 -
+echo      7 -
+echo      8 -
+echo --------------------------------------------------------
 ::
 :: -----------------------------------------------------------------------
 ::
