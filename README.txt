@@ -1,42 +1,119 @@
+Please read the disclaimer and prerequisites before you use this program.
+You can always open this file again. It's named README.txt.
+
+-----------------------------|-DISCLAIMER-|------------------------------
+
+**BY USING THE HTC THUNDERBOLT TOOL, YOU AGREE TO THE FOLLOWING:
+
+      *I, Luke Frazier, aka trter10, am NOT responsible for any damage
+       that this program may cause.
+
+      *You, the user, is aware that rooting voids your phone's warranty.
+
+      *This program is distributed in the hope that it will be useful,
+ 
+       but WITHOUT ANY WARRANTY; without even the implied warranty of
+       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+       General Public License for more details.
 
 
---Not recognizing the phone?
+
+----------------------------|-PREREQUISITES-|----------------------------
+
+      *Please use only the exit option in the program, and do not just 
+       hit the 'X' button. Hitting the 'X' button leaves unneccessary
+       files and processes running and does not provide proper closure
+       to the logs.
+
+      *Make sure USB Debugging and Stay Awake are
+ enabled in Settings >
+       Apps > Development.
+
+      *Make sure HTC Sync, DoubleTwist, EasyTether,
+ Droid Explorer, etc.
+       are UNINSTALLED.
 
 
-      -Make sure USB Debugging and Stay Awake are
-
-       enabled in Settings - Apps - Development.
-      -Make sure HTC Sync, DoubleTwist, EasyTether,
-
-       Droid Explorer, etc. are uninstalled.
-
-      -Run Driver.exe, packaged with this.
+      *Run Driver.exe, packaged with this.
 
 
 
---Not downloading anything?
+      *Keep the phone's screen on at all times (important!)
+
+      *If you are HTCDev unlocked, you must first RELOCK, and then S-OFF
+       and root. WARNING! IF YOU RELOCK WITHOUT RUU'ING YOU WILL GET A 
+       SECURITY WARNING AND WILL NOT BE ABLE TO BOOT THE PHONE!!
+       (You put the RUU on the SD card, then fastboot oem lock, 
+       then go to hboot and flash the RUU. IT WILL WIPE YOUR DATA!!)
+       If you don't know how to do this, contact me, info below.
+     
 
 
-      -Make sure to disable PeerBlock.
+---------------------------------|-FAQ-|---------------------------------
+      
+**Not downloading anything?
 
-      -You may have a content filter or firewall
+
+      *Make sure to disable PeerBlock.
+
+
+      *You may have a content filter or firewall
        that is blocking access.
 
 
---Want to contact or thank me?
+**Want to contact or thank me?
 
-      -Tweet me, @trter10
-
-      -Email/GTalk me, lukeafrazier@gmail.com
-
-      -Buy me a Monster at http://tinyw.in/TrterDonate
-      -Press the thanks button on my post :)
+      *Tweet me, @trter10
 
 
-*************************************************************************
-********************************==========*******************************-------------------------------|-LISCENSE-|------------------------------
-********************************==========*******************************
-*************************************************************************
+      *Email/GTalk me, lukeafrazier@gmail.com
+
+
+      *Buy me a Monster at http://tinyw.in/TrterDonate
+
+      *Press the thanks button on my post :)
+
+
+
+--------------------------------|-CREDITS-|------------------------------
+
+      *ChainsDD - Superuser
+
+      *The Revolutionary team:
+       Adam Glasgall, Joshua Wise, Koush Dutta, Kenny Millington, Eric
+       Smaxwill, Michael Sullivan, 0xf4b, Ryan Pearl, Sen Verbrugge, Matt
+       Mastracci, Matthew Fogle, Sebastion Krahmer, BumbleDroid, Scott
+       Walker, attn1, Kevin Bruckert, and toastcfh - Revolutionary
+
+      *The Revolutionary Team - ZergRush
+
+      *Kevin Bruckert (Agrabren) and #TeamWin - fre3vo exploit
+
+      *Koushik Dutta - ClockWorkMod recoveries
+
+      *TeamWin - TWRP recovery
+
+      *@MadMaxx82_xda on twitter - 4ext recovery & app
+
+      *TrueBlue_Drew @ XDA - Splash Flasher
+
+      *AndroidGod -Being my official beta tester for the unrooter
+
+      *Goldfish - Foooood
+
+      *My fan - I got hot while making this ok?
+
+      *Zomboy & MonstercatMedia - For making the sick music I listened to
+       while coding this
+
+      *HTC - They kinda like, made the phone.
+
+      *Me - Everything else was my original work. And because I'm a 
+       conceited jerk. ;P
+
+
+
+-------------------------------|-LICENSE-|-------------------------------
 
                     GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
