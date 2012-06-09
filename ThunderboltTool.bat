@@ -15,8 +15,8 @@
 ::
 @echo off
 SETLOCAL
-set verno=Indev
-set buildtime=June 6 2012, 12:31 AM EST
+set verno=v0.1b1
+set buildtime=June 9 2012, 12:40 AM EST
 title                                            HTC Thunderbolt Tool %verno%
 color 0b
 IF NOT EXIST support_files\RAN (start README.txt)
@@ -38,7 +38,6 @@ IF EXIST adbwinusbapi.dll (del adbwinusbapi.dll)
 IF EXIST fastboot.exe (del fastboot.exe)
 IF EXIST adb.exe (del adb.exe)
 ::*********************************SKIPPING UPDATES, REMOVE THIS PRIOR TO RELEASE******************************
-GOTO PROGRAM
 :: * Script update engine  *
 echo Checking for updates...
 ::In case of freshly updated script...
@@ -51,11 +50,15 @@ support_files\md5sums ThunderboltTool.bat >support_files\Script-MD5.txt
 support_files\wget --quiet -O support_files\Script-server-MD5.txt http://dl.dropbox.com/u/61129367/Script-server-MD5.txt
 ::Checking to see if there's a new version...
 fc /b support_files\Script-MD5.txt support_files\Script-server-MD5.txt >NUL
-if errorlevel 1 (Goto OTA) ELSE (
+if errorlevel 1 (
+Echo Updating >>%log%
+GOTO OTA
+)
+del support_files\Script-new-MD5.txt >>%log% 2>&1
 echo No updates availible. >>%log%
 echo -- >>%log%
 GOTO PROGRAM
-)
+
 :OTA
 echo Updating... >>%log%
 MOVE support_files\OTA.bat OTA.bat >NUL
@@ -64,11 +67,8 @@ exit
 :PROGRAM
 cls
 IF NOT EXIST support_files\download (mkdir support_files\download)
-echo You are running the current version, %verno%.
-echo.
 IF EXIST support_files\Script-MD5.txt (del support_files\Script-MD5.txt)
 IF EXIST support_files\Script-server-MD5.txt (del support_files\Script-server-MD5.txt)
-cls
 echo Starting ADB...
 support_files\adb kill-server
 support_files\adb start-server
@@ -174,13 +174,11 @@ echo.
 echo   ROM Version: %romver%
 echo         HBOOT: %bootloader%
 echo.
-echo *** Means this function does not work YET.
-echo.
 echo  MAIN MENU
 echo --------------------------------------------------------
 echo       1 - Unroot
 echo       2 - Recovery menu 
-echo   *** 3 - Unbrick menu
+echo       3 - Unbrick menu  ** COMING SOON **
 echo       4 - Boot menu
 echo       5 - Extras
 echo       6 - About
@@ -205,23 +203,10 @@ echo -- >>%log%
 set m=NULL
 echo                Welcome to the HTC Thunderbolt tool, by trter10.
 echo.
-echo --------------------------------------------------------
-echo   --Not recognizing the phone!
+echo Device not connected! 
 echo.
-echo      -Make sure USB Debugging and Stay Awake are
-echo       enabled in Settings - Apps - Development.
+echo If you are having issues, please read the README.txt.
 echo.
-echo      -Make sure HTC Sync, DoubleTwist, EasyTether,
-echo       Droid Explorer, etc. are uninstalled.
-echo.
-echo      -Unplug the phone and plug it back in.
-echo.
-echo      -Try a different USB Port and/or cable.
-echo.
-echo      -Disable and re-enable USB Debugging.
-echo.
-echo      -Run Driver.exe, packaged with this.
-echo --------------------------------------------------------
 echo Waiting for device connection...
 support_files\adb wait-for-device
 GOTO MAIN
@@ -1034,11 +1019,12 @@ echo       1 - Disable OTA Updates
 ::echo       3 - Update Superuser
 echo       2 - Run ADB/Fastboot cmd (Enter back to return)
 echo       3 - Install Busybox
-echo       4 - Splash Screen Tool by TrueBlue_Drew @ XDA
+::echo       4 - Splash Screen Tool by TrueBlue_Drew @ XDA
 ::echo       5 - Disable shutter sounds *Illegal in some places!
 ::echo       6 - Re-enable shutter sounds
-echo       5 - Clear logs
-echo       6 - Exit
+echo       4 - Clear logs
+echo       5 - Exit
+echo       ** MORE COMING SOON **
 echo ----------------------------------------------------------
 set /p m=Choose what you want to do or hit ENTER for main menu. 
 IF %M%==1 (GOTO OTABlock)
@@ -1062,14 +1048,14 @@ cls
 cmd
 )
 IF %M%==3 (GOTO bbox)
-IF %M%==4 (GOTO splash)
-IF %M%==5 (
-echo Chose option 5 - Clear logs >>%log%
+::IF %M%==4 (GOTO splash)
+IF %M%==4 (
+echo Chose option 4 - Clear logs >>%log%
 MOVE %log% %log%.bak
 del logs\*.log
 MOVE %log%.bak %log%
 )
-IF %M%==6 (
+IF %M%==5 (
 echo -- >>%log%
 GOTO EXIT
 )

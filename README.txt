@@ -63,6 +63,8 @@ You can always open this file again. It's named README.txt.
 
 **Want to contact or thank me?
 
+      *IF YOU CONTACT ME WITH AN ISSUE, INCLUDE YOUR LOG FILES! (In log folder)
+
       *Tweet me, @trter10
 
 
