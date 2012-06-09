@@ -16,9 +16,10 @@
 @echo off
 SETLOCAL
 set verno=v0.1b1
-set buildtime=June 9 2012, 12:40 AM EST
+set buildtime=June 9 2012, 12:50 AM EST
 title                                            HTC Thunderbolt Tool %verno%
 color 0b
+IF NOT EXIST support_files (GOTO UNZIP-ERR)
 IF NOT EXIST support_files\RAN (start README.txt)
 echo Program ran for first time. >support_files\RAN
 ::
@@ -1454,4 +1455,18 @@ IF EXIST support_files\here (del support_files\here)
 IF EXIST support_files\Script-new-MD5.txt (del support_files\Script-new-MD5.txt)
 support_files\adb kill-server
 ENDLOCAL
+exit
+
+:UNZIP-ERR
+cls
+color 0c
+echo.
+echo It appears that you did not unzip the file correctly. 
+echo Right click on the zip, and click extract all.
+echo Make sure "Show extracted files when complete" is selected,
+echo and click extract. Then run ThunderboltTool.bat in the folder
+echo that pops up.
+echo.
+echo Press ENTER to exit...
+pause >NUL
 exit
