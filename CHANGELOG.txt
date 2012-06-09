@@ -1,0 +1,14 @@
+---------------------------------------------------
+v0.1b2 - 6/9/12
+
+-Now works in recovery mode.
+-Shows bootmode on main menu.
+-Grammatical correction in about.
+-No odd text while flashing CWM and TWRP.
+
+---------------------------------------------------
+v0.1b1 - 6/9/12
+
+-Initial Release.
+
+---------------------------------------------------

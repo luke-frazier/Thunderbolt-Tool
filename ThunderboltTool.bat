@@ -15,8 +15,8 @@
 ::
 @echo off
 SETLOCAL
-set verno=v0.1b1
-set buildtime=June 9 2012, 12:50 AM EST
+set verno=v0.1b2
+set buildtime=June 9 2012, 2:52 PM EST
 title                                            HTC Thunderbolt Tool %verno%
 color 0b
 IF NOT EXIST support_files (GOTO UNZIP-ERR)
@@ -39,6 +39,7 @@ IF EXIST adbwinusbapi.dll (del adbwinusbapi.dll)
 IF EXIST fastboot.exe (del fastboot.exe)
 IF EXIST adb.exe (del adb.exe)
 ::*********************************SKIPPING UPDATES, REMOVE THIS PRIOR TO RELEASE******************************
+::GOTO PROGRAM
 :: * Script update engine  *
 echo Checking for updates...
 ::In case of freshly updated script...
@@ -61,8 +62,8 @@ echo -- >>%log%
 GOTO PROGRAM
 
 :OTA
-echo Updating... >>%log%
-MOVE support_files\OTA.bat OTA.bat >NUL
+echo Updating >>%log%
+MOVE support_files\OTA.bat OTA.bat >>%log% 2>&1
 OTA.bat
 exit
 :PROGRAM
@@ -100,14 +101,25 @@ GOTO skip
 :MAIN2
 set warn=
 echo Getting phone info...
-echo -- >>%log%
 echo Getting phone info... >>%log%
 echo -- >>%log%
+::My workaround to get this to work in recovery mode (Just in case)
+::The addidtional /system/bin's are for this reason also.
+support_files\adb shell mount system >>support_files\mount 2>&1
+set /p bv=<support_files\mount
+del support_files\mount
+IF "%bv%" == "Usage: mount [-r] [-w] [-o options] [-t type] device directory" (
+echo Phone is normally booted >>%log%
+set recovery=No
+) ELSE (
+echo Phone is in recovery mode >>%log%
+set recovery=yes
+)
 ::Checking ROM Version
-support_files\adb shell getprop ro.product.version>support_files\romver
+support_files\adb shell /system/bin/getprop ro.product.version>support_files\romver
 set /p romver=<support_files\romver
 ::Checking bootloader
-support_files\adb shell getprop ro.bootloader>support_files\bl
+support_files\adb shell /system/bin/getprop ro.bootloader>support_files\bl
 set /p bl=<support_files\bl
 IF %bl%==6.04.1002 (set bootloader=Revolutionary S-OFF)
 IF %bl%==1.04.2000 (set bootloader=ENG S-OFF)
@@ -115,9 +127,14 @@ IF %bl%==1.04.0000 (set bootloader=Stock S-ON)
 IF %bl%==1.05.0000 (set bootloader=Stock S-ON)
 ::Seeing if ADB-Rooted so we can determine
 ::how to carry out certain actions.
-support_files\adb shell getprop ro.secure>support_files\adbroot
+support_files\adb shell /system/bin/getprop ro.secure>support_files\adbroot
 set /p adbroot=<support_files\adbroot
 IF %adbroot%==0 (set adbrt=Yes) ELSE (set adbrt=No)
+IF "%recovery%" == "yes" (Set adbrt=Yes)
+IF EXIST support_files\adbroot (del support_files\adbroot)
+IF EXIST support_files\bl (del support_files\bl)
+IF EXIST support_files\romver (del support_files\romver)
+IF EXIST support_files\here (del support_files\here)
 echo Bootloader: %bl% %bootloader% >>%log%
 echo ADB rooted: %adbrt% >>%log%
 echo ROM Version: %romver% >>%log%
@@ -174,6 +191,7 @@ echo Phone information:
 echo.
 echo   ROM Version: %romver%
 echo         HBOOT: %bootloader%
+IF "%recovery%" == "yes" (echo     Boot mode: Recovery) ELSE (echo     Boot mode: Normal)
 echo.
 echo  MAIN MENU
 echo --------------------------------------------------------
@@ -199,6 +217,7 @@ echo -- >>%log%
 GOTO MAIN
 
 :nophonemain
+cls
 echo Loading phone not connected prompt >>%log%
 echo -- >>%log%
 set m=NULL
@@ -209,7 +228,17 @@ echo.
 echo If you are having issues, please read the README.txt.
 echo.
 echo Waiting for device connection...
-support_files\adb wait-for-device
+echo.
+IF EXIST support_files\here (del support_files\here)
+support_files\adb shell echo a>support_files\here 2>&1
+set here=NULL
+set /p here=<support_files\here
+del support_files\here
+if "%here%" NEQ "a" (
+PING 1.1.1.1 -n 1 -w 2000 >NUL
+GOTO nophonemain
+)
+PING 1.1.1.1 -n 1 -w 3000 >NUL
 GOTO MAIN
 ::
 :: -----------------------------------------------------------------------
@@ -637,7 +666,7 @@ del support_files\download\TWRP.img.md5
 del support_files\download\TWRP-here.md5
 support_files\adb reboot-bootloader
 support_files\fastboot flash recovery support_files\download\TWRP.img >>%log% 2>&1
-support_files\fastboot reboot >>%log%
+support_files\fastboot reboot >>%log% 2>&1
 support_files\adb wait-for-device
 support_files\adb reboot recovery
 echo.
@@ -662,8 +691,8 @@ support_files\wget --quiet -O support_files\download\CWMReg.img.md5 http://dl.dr
 support_files\md5sums support_files\download\CWMReg.img>support_files\download\CWM-here.md5 2>&1
 set /p cwmdl=<support_files\download\CWMReg.img.md5
 set /p cwmhere=<support_files\download\CWM-here.md5
-echo Our checksum is     %cwmhere%
-echo Correct checksum is %cwmdl%
+echo Our checksum is     %cwmhere% >>%log%
+echo Correct checksum is %cwmdl% >>%log%
 cls
 echo ------------------------------
 echo           Flash CWM        
@@ -949,8 +978,8 @@ support_files\fastboot oem powerdown >>%log% 2>&1
 goto boot
 )
 IF %M%==7 (
-GOTO EXIT
 echo -- >>%log%
+GOTO EXIT
 )
 IF %M%==NULL (GOTO MAIN)
 GOTO rootBOOT
@@ -1419,7 +1448,7 @@ cls
 color 0c
 echo.
 echo.
-echo              HTC Thunderbolt tool %verno% - %buildtime%
+echo              HTC Thunderbolt Tool %verno% - %buildtime%
 echo.
 echo                              Created by trter10
 echo.
@@ -1448,10 +1477,6 @@ GOTO main
 
 :EXIT
 echo Exiting... >>%log%
-IF EXIST support_files\adbroot (del support_files\adbroot)
-IF EXIST support_files\bl (del support_files\bl)
-IF EXIST support_files\romver (del support_files\romver)
-IF EXIST support_files\here (del support_files\here)
 IF EXIST support_files\Script-new-MD5.txt (del support_files\Script-new-MD5.txt)
 support_files\adb kill-server
 ENDLOCAL
