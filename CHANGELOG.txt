@@ -1,4 +1,5 @@
 
+
 ---------------------------------------------------
 v0.1b3 - 6/9/12
 
@@ -8,6 +9,11 @@ v0.1b3 - 6/9/12
 -Small text edit in the rooter 
 -Fixed a small logging error
 -Edited OTA.bat (Using SED)
+
+OTA Update @ 10:12 PM EST
+
+-Fixed SED.zip fetch. (Thanks, daz of Thunderbolt
+ Forums!)
 
 ---------------------------------------------------
 v0.1b2 - 6/9/12
