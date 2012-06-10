@@ -1,3 +1,14 @@
+
+---------------------------------------------------
+v0.1b3 - 6/9/12
+
+-Fixed where the compatibility with recovery mode
+ makes the logs ugly
+-Forwards compatibility using the SED binaries
+-Small text edit in the rooter 
+-Fixed a small logging error
+-Edited OTA.bat (Using SED)
+
 ---------------------------------------------------
 v0.1b2 - 6/9/12
 

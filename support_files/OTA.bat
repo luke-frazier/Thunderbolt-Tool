@@ -19,7 +19,7 @@ echo Starting Thunderbolt Tool Updater at %date% %time% >%log%
 echo -- >>%log%
 :MAIN
 cls
-echo There is a new version of this script availible. Downloading now...
+echo Updating...
 echo.
 IF NOT EXIST support_files\Script-server-MD5.txt (support_files\wget --quiet -O support_files\Script-server-MD5.txt http://dl.dropbox.com/u/61129367/Script-server-MD5.txt >>%log%)
 del ThunderboltTool.bat

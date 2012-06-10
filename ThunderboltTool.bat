@@ -15,13 +15,14 @@
 ::
 @echo off
 SETLOCAL
-set verno=v0.1b2
-set buildtime=June 9 2012, 2:52 PM EST
+set verno=v0.1b3
+set buildtime=June 9 2012, 7:50 PM EST
 title                                            HTC Thunderbolt Tool %verno%
 color 0b
 IF NOT EXIST support_files (GOTO UNZIP-ERR)
 IF NOT EXIST support_files\RAN (start README.txt)
 echo Program ran for first time. >support_files\RAN
+IF NOT EXIST support_files\download (mkdir support_files\download)
 ::
 ::Setting up logging
 ::Special thanks to Alex K. here http://tinyw.in/nh4r
@@ -39,7 +40,7 @@ IF EXIST adbwinusbapi.dll (del adbwinusbapi.dll)
 IF EXIST fastboot.exe (del fastboot.exe)
 IF EXIST adb.exe (del adb.exe)
 ::*********************************SKIPPING UPDATES, REMOVE THIS PRIOR TO RELEASE******************************
-::GOTO PROGRAM
+::GOTO PROGRAM rem ADD :: FOR RELEASE VERSIONS
 :: * Script update engine  *
 echo Checking for updates...
 ::In case of freshly updated script...
@@ -68,9 +69,34 @@ OTA.bat
 exit
 :PROGRAM
 cls
-IF NOT EXIST support_files\download (mkdir support_files\download)
+::Getting SED and its .dll's if the need exists
+:REGETSED
+cls
+IF NOT EXIST support_files\download\sed.zip (
+echo Getting necessary files...
+echo Getting sed >>%log%
+support_files\wget -O support_files\download\sed.zip http://dl.dropbox.com/u/61129367/SED.zip >>%log% 2>&1
+title                                            HTC Thunderbolt Tool %verno%
+support_files\md5sums support_files\download\sed.zip>support_files\download\sed.zip.md5
+set /p sedmd5=<support_files\download\sed.zip.md5
+del support_files\download\sed.zip.md5
+echo Our checksum is         %sedmd5% >>%log%
+echo The correct checksum is 5F4BA3E44B33934E80257F3948970868  support_files\download\sed.zip >>%log%
+IF "%sedmd5%" NEQ "5F4BA3E44B33934E80257F3948970868  support_files\download\sed.zip" (
+del support_files\download\sed.zip
+GOTO REGETSED
+)
+)
+IF NOT EXIST support_files\sed.exe (support_files\unzip support_files\download\sed.zip -d support_files\ >>%log%)
+cls
+::Editing OTA.bat
+support_files\cat support_files/OTA.bat | support_files\sed -e s/"echo There is a new version of this script availible. Downloading now..."/"echo Updating..."/ >support_files\newota.bat
+support_files\cat support_files/newota.bat >support_files\OTA.bat
+del support_files\newota.bat
+::
 IF EXIST support_files\Script-MD5.txt (del support_files\Script-MD5.txt)
 IF EXIST support_files\Script-server-MD5.txt (del support_files\Script-server-MD5.txt)
+:SKIPOTAEDIT
 echo Starting ADB...
 support_files\adb kill-server
 support_files\adb start-server
@@ -217,9 +243,10 @@ echo -- >>%log%
 GOTO MAIN
 
 :nophonemain
-cls
 echo Loading phone not connected prompt >>%log%
 echo -- >>%log%
+:nophonemain2
+cls
 set m=NULL
 echo                Welcome to the HTC Thunderbolt tool, by trter10.
 echo.
@@ -236,7 +263,7 @@ set /p here=<support_files\here
 del support_files\here
 if "%here%" NEQ "a" (
 PING 1.1.1.1 -n 1 -w 2000 >NUL
-GOTO nophonemain
+GOTO nophonemain2
 )
 PING 1.1.1.1 -n 1 -w 3000 >NUL
 GOTO MAIN
@@ -837,7 +864,7 @@ PING 1.1.1.1 -n 1 -w 4000 >NUL
 GOTO RECOVERY
 
 :4ext
-echo Chose Option 5 - Install 4ext Recovery Updater >>%log&
+echo Chose Option 5 - Install 4ext Recovery Updater >>%log%
 :4ext2
 cls
 echo ------------------------------
