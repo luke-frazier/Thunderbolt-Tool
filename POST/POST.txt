@@ -1,0 +1,101 @@
+[SIZE="3"]My much anticipated HTC Thunderbolt tool is HERE! :D
+
+This tool is your all-in-one toolbox for the HTC Thunderbolt.
+
+[B][U]With it, you can:[/U][/B]
+
+[LIST=1]
+[*]S-OFF and Root
+[*]Unroot
+[*]Flash CWM, CWM Touch, TWRP, or 4ext recovery
+[*]Boot menu: Reboot, Hot reboot, Reboot recovery, Reboot to fastboot, Reboot to hboot, Power off
+[*]Disable HTC OTA Updates
+[*]Run an ADB/Fastboot Command Prompt
+[*]Install Busybox
+[/LIST]
+*** MANY MORE FEATURES COMING SOON! ***
+
+[U][B]SCREENSHOTS:
+[/B][/U]
+[IMG]http://i1190.photobucket.com/albums/z441/trter10/ScreenyUnrooted.png[/IMG]
+[IMG]http://i1190.photobucket.com/albums/z441/trter10/Screeny.png[/IMG] 
+
+[B][U]CREDITS:[/U][/B]
+
+[QUOTE]
+*ChainsDD - Superuser
+
+
+*The Revolutionary team:
+Adam Glasgall, Joshua Wise, Koush Dutta, Kenny Millington, Eric
+Smaxwill, Michael Sullivan, 0xf4b, Ryan Pearl, Sen Verbrugge, Matt
+Mastracci, Matthew Fogle, Sebastion Krahmer, BumbleDroid, Scott
+Walker, attn1, Kevin Bruckert, and toastcfh - Revolutionary S-OFF
+
+
+*The Revolutionary Team - ZergRush
+
+
+*Kevin Bruckert (Agrabren) and #TeamWin - fre3vo exploit
+
+
+*Koushik Dutta - ClockWorkMod recoveries
+
+
+*TeamWin - TWRP recovery
+
+
+*@MadMaxx82_xda on twitter - 4ext recovery & app
+
+
+*TrueBlue_Drew @ XDA - Splash Flasher (Currently Unimplemented)
+
+
+*AndroidGod -Being my official beta tester for the unrooter
+
+
+*Goldfish - Foooood
+
+
+*My fan - I got hot while making this ok?
+
+
+*Zomboy & MonstercatMedia - For making the sick music I listened to while coding this
+
+
+*HTC - They kinda like, made the phone.
+
+
+*Me - Everything else was my original work. And because I'm a conceited jerk. ;P
+
+[/QUOTE]
+
+[U][B]INSTRUCTIONS:
+[/B][/U]
+Put ThunderboltTool.exe in its own folder, then run ThunderboltTool.exe, then run ThunderboltTool.bat. The .bat is what you will use from then on.
+
+[COLOR="Red"][B][U]READ THE README THAT POPS UP ON THE FIRST RUN AND FOLLOW ALL ITS DIRECTIONS!!!![/U][/B]
+[/COLOR]
+[U][B]CHANGELOG:[/B][/U]
+
+Changelog can be found here: [URL]https://github.com/trter10/Thunderbolt-Tool/blob/master/CHANGELOG.txt[/URL]
+
+
+[B][U]DOWNLOAD:[/U][/B]
+
+Main Download: http://tinyw.in/Jrf0
+
+MD5 is on download page.
+
+ENJOY! :)[/SIZE]
+
+
+
+
+
+--------
+
+
+Hi! Would you mind un-sticking my thread here http://forums.androidcentral.com/thunderbolt-rooting-roms-hacks/162217-tool-root-2-11-605-9-19-no-downgrade-data-wipe.html
+And sticking this thread?  http://forums.androidcentral.com/thunderbolt-rooting-roms-hacks/179367-all-one-htc-thunderbolt-tool.html
+Thank you!

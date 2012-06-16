@@ -15,14 +15,10 @@
 ::
 @echo off
 SETLOCAL
-set verno=v0.1b3
-set buildtime=June 9 2012, 7:50 PM EST
+set verno=v0.2b1
+set buildtime=June 14 2012, 12:24 AM EST
 title                                            HTC Thunderbolt Tool %verno%
 color 0b
-IF NOT EXIST support_files (GOTO UNZIP-ERR)
-IF NOT EXIST support_files\RAN (start README.txt)
-echo Program ran for first time. >support_files\RAN
-IF NOT EXIST support_files\download (mkdir support_files\download)
 ::
 ::Setting up logging
 ::Special thanks to Alex K. here http://tinyw.in/nh4r
@@ -33,6 +29,29 @@ if "%hr:~0,1%" equ " " set hr=0%hr:~1,1%
 set log=logs\%date:~-4,4%%date:~-10,2%%date:~-7,2%_%hr%%time:~3,2%%time:~6,2%_%verno%.log
 IF NOT EXIST logs (MKDIR logs)
 echo Starting Thunderbolt Tool %verno% build %buildtime% at %date% %time% >%log%
+::Making sure that we extracted correctly
+set uze=no
+set sf=here
+set rm=here
+set dv=here
+IF NOT EXIST Driver.exe (
+set dv=missing
+set uze=yes
+)
+IF NOT EXIST README.txt (
+set rm=missing
+set uze=yes
+)
+IF NOT EXIST support_files (
+set sf=missing
+set uze=yes
+)
+IF "%uze%" == "yes" (GOTO UNZIP-ERR)
+::Other necessary actions
+IF NOT EXIST support_files\RAN1 (start README.txt)
+echo Program ran for first time. >support_files\RAN1
+IF NOT EXIST support_files\download (mkdir support_files\download)
+IF EXIST ThunderboltTool.exe (del ThunderboltTool.exe)
 ::Removing unneeded files
 IF EXIST back.bat (del back.bat)
 IF EXIST adbwinapi.dll (del adbwinapi.dll)
@@ -40,7 +59,7 @@ IF EXIST adbwinusbapi.dll (del adbwinusbapi.dll)
 IF EXIST fastboot.exe (del fastboot.exe)
 IF EXIST adb.exe (del adb.exe)
 ::*********************************SKIPPING UPDATES, REMOVE THIS PRIOR TO RELEASE******************************
-::GOTO PROGRAM rem ADD :: FOR RELEASE VERSIONS
+GOTO PROGRAM rem ADD :: FOR RELEASE VERSIONS
 :: * Script update engine  *
 echo Checking for updates...
 ::In case of freshly updated script...
@@ -69,6 +88,15 @@ OTA.bat
 exit
 :PROGRAM
 cls
+::Rooter fix
+IF EXIST support_files\root\cp (GOTO skipmv)
+IF EXIST support_files\root (
+echo Running rooter hotfix >>%log%
+copy support_files\AdbWinApi.dll support_files\root\AdbWinApi.dll >NUL
+copy support_files\AdbWinUsbApi.dll support_files\root\AdbWinUsbApi.dll >NUL
+echo copied >support_files\root\cp
+)
+:skipmv
 ::Getting SED and its .dll's if the need exists
 :REGETSED
 cls
@@ -113,9 +141,10 @@ set bootloader=Unknown
 set adbrt=Unknown
 set here=NULL
 ::Seeing if phone is online
-support_files\adb shell echo a>support_files\here
-set /p here=<support_files\here
-if "%here%" == "a" (goto MAIN2)
+:: Old code
+:: -support_files\adb shell echo a>support_files\here
+FOR /F "tokens=1 delims=:" %%a in ( 'support_files\adb shell echo here:1' ) do ( set here=%%a )
+if "%here%"=="here " (goto MAIN2)
 ::If the script is still going at this point,
 ::and has not went to :MAIN2, we will set a 
 ::variable that tells the program that the 
@@ -130,37 +159,40 @@ echo Getting phone info...
 echo Getting phone info... >>%log%
 echo -- >>%log%
 ::My workaround to get this to work in recovery mode (Just in case)
-::The addidtional /system/bin's are for this reason also.
-support_files\adb shell mount system >>support_files\mount 2>&1
-set /p bv=<support_files\mount
-del support_files\mount
-IF "%bv%" == "Usage: mount [-r] [-w] [-o options] [-t type] device directory" (
+::Any addidtional /system/bin's before getprop are for this reason also.
+FOR /F "tokens=1 delims=" %%a in ( 'support_files\adb shell mount system' ) do ( set bv=%%a )
+IF "%bv%" == "Usage: mount [-r] [-w] [-o options] [-t type] device directory " (
 echo Phone is normally booted >>%log%
 set recovery=No
 ) ELSE (
 echo Phone is in recovery mode >>%log%
+support_files\adb shell mount /sdcard >%log% 2>&1
+support_files\adb shell mount /data >%log% 2>&1
+support_files\adb shell mount /cache >>%log% 2>&1
 set recovery=yes
 )
 ::Checking ROM Version
-support_files\adb shell /system/bin/getprop ro.product.version>support_files\romver
-set /p romver=<support_files\romver
+::Android ver
+for /f "tokens=2 delims==" %%a in ( 'support_files\adb shell cat /system/build.prop ^| find "ro.build.version.release"' ) do ( set andver=%%a )
+::Workaround for recovery mode so that we can still get romver
+for /f "tokens=2 delims==" %%a in ( 'support_files\adb shell cat /system/build.prop ^| find "ro.product.version"' ) do ( set romver=%%a )
+IF "%romver%" == "Unknown" (for /f "tokens=2 delims==" %%a in ( 'support_files\adb shell cat /system/build.prop ^| find "ro.build.display.id"' ) do ( set romver=%%a ))
 ::Checking bootloader
-support_files\adb shell /system/bin/getprop ro.bootloader>support_files\bl
-set /p bl=<support_files\bl
-IF %bl%==6.04.1002 (set bootloader=Revolutionary S-OFF)
-IF %bl%==1.04.2000 (set bootloader=ENG S-OFF)
-IF %bl%==1.04.0000 (set bootloader=Stock S-ON)
-IF %bl%==1.05.0000 (set bootloader=Stock S-ON)
+for /f "tokens=1 delims=" %%a in ( 'support_files\adb shell /system/bin/getprop ro.bootloader' ) do ( set bl=%%a )
+IF "%bl%" == "6.04.1002 " (set bootloader=Revolutionary S-OFF)
+IF "%bl%" == "1.04.2000 " (set bootloader=ENG S-OFF)
+IF "%bl%" == "1.04.0000 " (set bootloader=Stock S-ON)
+IF "%bl%" == "1.05.0000 " (set bootloader=Stock S-ON)
 ::Seeing if ADB-Rooted so we can determine
 ::how to carry out certain actions.
-support_files\adb shell /system/bin/getprop ro.secure>support_files\adbroot
-set /p adbroot=<support_files\adbroot
-IF %adbroot%==0 (set adbrt=Yes) ELSE (set adbrt=No)
+for /f "tokens=1 delims=" %%a in ( 'support_files\adb shell /system/bin/getprop ro.secure' ) do ( set adbroot=%%a )
+IF "%adbroot%" == "0 " (set adbrt=Yes) ELSE (set adbrt=No)
 IF "%recovery%" == "yes" (Set adbrt=Yes)
-IF EXIST support_files\adbroot (del support_files\adbroot)
-IF EXIST support_files\bl (del support_files\bl)
-IF EXIST support_files\romver (del support_files\romver)
-IF EXIST support_files\here (del support_files\here)
+::Seeing if su is updated/installed
+set su=yes
+for /f "tokens=1 delims=" %%a in ( 'support_files\adb shell su -v' ) do ( set sutest=%%a )
+IF "%sutest%" NEQ "3.0.3.2 " (set su=old)
+IF "%sutest%" == "/system/bin/sh: su: not found " (set su=no)
 echo Bootloader: %bl% %bootloader% >>%log%
 echo ADB rooted: %adbrt% >>%log%
 echo ROM Version: %romver% >>%log%
@@ -169,12 +201,13 @@ echo -- >>%log%
 title                                            HTC Thunderbolt Tool %verno%
 set m=NULL
 cls
-IF "%bl%" == "1.04.2000" (set rooted=yes)
-IF "%bl%" == "6.04.1002" (set rooted=yes)
-IF "%bl%" == "1.04.0000" (set rooted=no)
-IF "%bl%" == "1.05.0000" (set rooted=no)
+IF "%bl%" == "1.04.2000 " (set rooted=yes)
+IF "%bl%" == "6.04.1002 " (set rooted=yes)
+IF "%bl%" == "1.04.0000 " (set rooted=no)
+IF "%bl%" == "1.05.0000 " (set rooted=no)
 ::Determining what menu to show
 IF "%warn%" == "nc" (GOTO nophonemain)
+IF "%sdcard%" == "no" (GOTO nosdcardmain)
 IF "%rooted%" == "no" (GOTO stockmain)
 IF "%rooted%" == "yes" (GOTO rootmain)
 :stockmain
@@ -188,7 +221,7 @@ echo.
 echo         * WARNING: Phone is stock! You must use 
 echo           option 1 before more functions are availible! 
 echo.
-echo   ROM Version: %romver%
+echo   ROM Version: %romver% - Android %andver%
 echo.
 echo  MAIN MENU
 echo --------------------------------------------------------
@@ -215,9 +248,10 @@ set m=NULL
 echo.
 echo Phone information: 
 echo.
-echo   ROM Version: %romver%
-echo         HBOOT: %bootloader%
+echo   ROM Version: %romver% - Android %andver%
 IF "%recovery%" == "yes" (echo     Boot mode: Recovery) ELSE (echo     Boot mode: Normal)
+IF "%su%" == "old" (echo     WARNING: SU binary is outdated! Please update it it in the Superuser app.)
+IF "%su%" == "no" (echo     WARNING: SU not found! Please use "S-OFF but no root?" in extras menu.)
 echo.
 echo  MAIN MENU
 echo --------------------------------------------------------
@@ -245,7 +279,6 @@ GOTO MAIN
 :nophonemain
 echo Loading phone not connected prompt >>%log%
 echo -- >>%log%
-:nophonemain2
 cls
 set m=NULL
 echo                Welcome to the HTC Thunderbolt tool, by trter10.
@@ -256,17 +289,19 @@ echo If you are having issues, please read the README.txt.
 echo.
 echo Waiting for device connection...
 echo.
+:nophonemain2
+::I can't use a FOR /F here, because if I do it prints "error: device not found" repeatedly
+::So we will do it manually
 IF EXIST support_files\here (del support_files\here)
 support_files\adb shell echo a>support_files\here 2>&1
 set here=NULL
 set /p here=<support_files\here
 del support_files\here
 if "%here%" NEQ "a" (
-PING 1.1.1.1 -n 1 -w 2000 >NUL
 GOTO nophonemain2
 )
-PING 1.1.1.1 -n 1 -w 3000 >NUL
 GOTO MAIN
+
 ::
 :: -----------------------------------------------------------------------
 ::
@@ -278,16 +313,16 @@ echo ------------------------------
 echo             Rooter            
 echo ------------------------------
 echo.
-echo Working...
+echo Preparing rooter...
 IF NOT EXIST support_files\download\DowngradeBypass.zip (GOTO getDB)
 IF EXIST support_files\download\downgradebypass.zip.md5 (del support_files\download\downgradebypass.zip.md5)
 support_files\wget --quiet -O support_files\download\DowngradeBypass.zip.md5 http://dl.dropbox.com/u/61129367/S-O-DowngradeBypass.zip.md5
-support_files\md5sums support_files\download\DowngradeBypass.zip>support_files\download\root.md5
-set /p rootmd5=<support_files\download\root.md5
+for /f "tokens=1 delims=" %%a in ( 'support_files\md5sums support_files\download\DowngradeBypass.zip' ) do ( set rootmd5=%%a )
 set /p DBzipMD5=<support_files\download\DowngradeBypass.zip.md5
+del support_files\download\DowngradeBypass.zip.md5
 echo Our checksum is     %rootmd5% >>%log%
 echo Correct checksum is %DBzipMD5% >>%log%
-IF "%rootmd5%" NEQ "%DBzipMD5%" (
+IF "%rootmd5%" NEQ "%DBzipMD5% " (
 :GetDB
 cls
 echo ------------------------------
@@ -307,8 +342,14 @@ IF NOT EXIST support_files\root (
 echo Unzipping rooter files... >>%log%
 support_files\unzip support_files\download\DowngradeBypass.zip -d support_files\root >>%log% 2>&1
 )
-IF EXIST support_files\download\downgradebypass.zip.md5 (del support_files\download\downgradebypass.zip.md5)
-IF EXIST support_files\download\root.md5 (del support_files\download\root.md5)
+IF EXIST support_files\root\cp (GOTO skipmv2)
+IF EXIST support_files\root (
+echo Running rooter hotfix >>%log%
+copy support_files\AdbWinApi.dll support_files\root\AdbWinApi.dll >NUL
+copy support_files\AdbWinUsbApi.dll support_files\root\AdbWinUsbApi.dll >NUL
+echo copied >support_files\root\cp
+)
+:skipmv2
 echo Launching Rooter... >>%log%
 echo -- >>%log%
 color 0a
@@ -363,11 +404,9 @@ echo.
 echo Working...
 support_files\adb kill-server >NUL 2>&1
 support_files\adb start-server >NUL 2>&1
-support_files\adb root >support_files\adb-running-as
-set /p rooted=<support_files\adb-running-as
-del support_files\adb-running-as
 ::Ensuring root was successful...
-IF "%rooted%"=="adbd is already running as root" (GOTO SUCCESSFUL) ELSE (GOTO UNSUCCESSFUL)
+for /f "tokens=1 delims=" %%a in ( 'support_files\adb root' ) do ( set rooted=%%a )
+IF "%rooted%"=="adbd is already running as root " (GOTO SUCCESSFUL) ELSE (GOTO UNSUCCESSFUL)
 :SUCCESSFUL
 cls
 echo ------------------------------
@@ -379,17 +418,12 @@ color 0c
 echo Success!
 echo.
 echo Just in case of PG05IMG >>%log%
-support_files\adb shell rm /sdcard/PG05IMG.zip >>%log% 2>&1
-support_files\adb shell getprop ro.bootloader >support_files\bl
-support_files\adb shell getprop ro.serialno >support_files\sn
+support_files\adb shell rm /sdcard/PG05IMG.zip >>%log% 2>&1 >support_files\sn
 echo Restarting adb...
 support_files\adb kill-server >NUL 2>&1
 support_files\adb start-server >NUL 2>&1
 echo.
-set /p serialno=<support_files\sn
-set /p hbootver=<support_files\bl
-del support_files\sn
-del support_files\bl
+for /f "tokens=1 delims=" %%a in ( 'support_files\adb shell getprop ro.serialno' ) do ( set serialno=%%a )
 echo X = MsgBox("On the revolutionary website, please scroll down to Download for Windows. Click that button, then cancel the download. Enter your phone's information in the prompts that pop up. The info you need is: Seiral Number: %serialno% Hboot version: %hbootver%. Once you do that, copy your beta key from the website, then paste it into the Revolutionary window. To paste it, right click the title bar of the Revolutionary window then click edit then click paste. If there are two revolutionary windows, you can close one. Please note that for Revolutionary to work you need to uninstall Droid Explorer if you have it. Thanks!",0+64+4096, "PLEASE READ - Message from trter10")>support_files\root\rev.vbs
 echo X = MsgBox("Please note that you need to enter Y to download and flash CWM recovery at the end of Revolutionary. After Revolutionary completes, using the volume buttons to navigate and power to select, you will need to exit fastboot by selecting bootloader, waiting a few seconds, then selecting recovery. Then, CWM will automatically install superuser and reboot.",0+64+4096, "PLEASE READ - Message from trter10")>>support_files\root\rev.vbs
 :su-no-ota
@@ -446,14 +480,12 @@ echo ------------------------------
 echo            Unrooter            
 echo ------------------------------
 echo.
-echo Working...
+echo Preparing unrooter...
 IF NOT EXIST support_files\download\unroot.zip (GOTO getunroot)
-support_files\md5sums support_files\download\unroot.zip>support_files\download\unroothere.md5
-set /p unroothere=<support_files\download\unroothere.md5
-del support_files\download\unroothere.md5
+for /f "tokens=1 delims=" %%a in ( 'support_files\md5sums support_files\download\unroot.zip' ) do ( set unroothere=%%a )
 echo Our checksum is     %unroothere% >>%log%
 echo Correct checksum is 770CF07D8DF125E145A4EABF3E7F95B1  support_files\download\unroot.zip >>%log%
-IF "%unroothere%" == "770CF07D8DF125E145A4EABF3E7F95B1  support_files\download\unroot.zip" (GOTO rununroot)
+IF "%unroothere%" == "770CF07D8DF125E145A4EABF3E7F95B1  support_files\download\unroot.zip " (GOTO rununroot)
 cls
 echo ------------------------------
 echo            Unrooter            
@@ -483,31 +515,28 @@ IF NOT EXIST support_files\unroot (
 echo Unzipping unrooter files... >>%log%
 support_files\unzip support_files\download\unroot.zip -d support_files\unroot >>%log% 2>&1
 )
-support_files\md5sums support_files\unroot\Stock-ROM.zip >support_files\unroot\stockromhere.md5
-set /p stockromhere=<support_files\unroot\stockromhere.md5
-del support_files\unroot\stockromhere.md5
-echo Our Stock ROM checksum is %stockromhere%
-echo The correct checksum is   013CBDD3A9B28BC894631008FA2148E2  support_files\unroot\Stock-ROM.zip
-IF "%stockromhere%" NEQ "013CBDD3A9B28BC894631008FA2148E2  support_files\unroot\Stock-ROM.zip" (
+for /f "tokens=1 delims=" %%a in ( 'support_files\md5sums support_files\unroot\Stock-ROM.zip' ) do ( set stockromhere=%%a )
+echo Our Stock ROM checksum is %stockromhere% >>%log%
+echo The correct checksum is   013CBDD3A9B28BC894631008FA2148E2  support_files\unroot\Stock-ROM.zip >>%log%
+IF "%stockromhere%" NEQ "013CBDD3A9B28BC894631008FA2148E2  support_files\unroot\Stock-ROM.zip " (
 echo Re-unzipping unroot.zip due to bad Stock-ROM.zip checksum >>%log%
 RMDIR "support_files\unroot" /S /Q
 GOTO rununroot
 )
 cls
+color 0a
 echo Launching Unrooter >>%log%
-echo ------------------------------
-echo            Unrooter            
-echo ------------------------------
-echo  -This will restore COMPLETELY 
-echo   to stock.
-echo  -This will wipe data.
-echo  -You must have an SD card
-echo   with at least 455 MB of free 
-echo   space.
-echo  -You must have a full charge.
-echo ------------------------------
+echo ------------------------------  INFO:
+echo            Unrooter                 -This will restore COMPLETELY to 
+echo ------------------------------       stock. (ROM, splash screen, etc)
 echo.
-echo Press enter when ready.
+echo Press enter when ready.             -THIS WILL WIPE DATA!! (Contacts, apps...)
+echo.
+echo                                     -You MUST have an SDCard with at
+echo                                      least 455 MB of free space.
+echo.
+echo                                     -You must have a full battery charge.
+echo.
 pause >NUL
 :REPUSH
 cls
@@ -515,35 +544,34 @@ echo ------------------------------
 echo            Unrooter            
 echo ------------------------------
 echo. 
-echo Pushing stock files to sdcard... 
+echo Pushing stock RUU to sdcard... 
 echo This will take a few minutes...
 echo.
 echo Just in case of PG05IMG >>%log%
 support_files\adb shell rm /sdcard/PG05IMG.zip >>%log% 2>&1
 echo Pushing files >>%log%
-IF EXIST support_files\unroot\filepush (del support_files\unroot\filepush)
-support_files\adb push support_files\unroot\Stock-ROM.zip /sdcard/PG05IMG.zip >>support_files\unroot\filepush 2>&1
-support_files\cat support_files/unroot/filepush >>%log% 2>&1
-:CHECKPUSH
+support_files\adb push support_files\unroot\Stock-ROM.zip /sdcard/PG05IMG.zip >support_files\push 2>&1
+for /f "tokens=2 delims=(" %%a in ( 'support_files\cat support_files/push' ) do ( set push1=%%a )
+echo %push1% >support_files\push
+for /f "tokens=1 delims=i" %%a in ( 'support_files\cat support_files/push' ) do ( set push2=%%a )
+IF "%push2%" NEQ "462205613 bytes  " (goto badpush) else (goto good)
+:badpush
 set m=NULL
 cls
 echo ------------------------------
 echo            Unrooter            
 echo ------------------------------
 echo. 
-support_files\cat support_files/unroot/filepush
+echo It appears thete was an error 
+echo pushing the RUU.
 echo.
-echo Did the file push correctly? 
-echo (If it has random numbers
-echo  you are ok.) 1 - Yes  2 - No
-echo (If not, make sure Stay 
-set /p m=Awake is enabled and try again.) 
-IF %M%==1 (GOTO GOOD)
-IF %M%==2 (
-echo Need to repush >>%log%
-GOTO REPUSH
-)
-GOTO CHECKPUSH
+echo Please make sure Stay Awake and
+echo Charge Only are enabled. The phone
+echo screen must stay on for the push.
+echo.
+echo Press ENTER to repush...
+pause >NUL
+ goto REPUSH
 :GOOD
 echo File pushed >>%log%
 del support_files\unroot\filepush
@@ -612,10 +640,11 @@ echo ------------------------------
 echo            Unrooter            
 echo ------------------------------
 echo.
-echo Congratulations! You are now unrooted!
+echo Unroot complete!
 PING 1.1.1.1 -n 1 -w 4000 >NUL
 cls
-ThunderboltTool.bat
+color 0b
+GOTO MAIN
 ::
 :: -----------------------------------------------------------------------
 ::
@@ -625,23 +654,34 @@ set m=NULL
 cls
 echo Loading recovery menu >>%log%
 echo.
+echo         * This tool assumes that you use 4eXT recovery.
+echo           Please flash it if you haven't yet.
+echo.
+echo         * 4eXT is NOT compatible with TWRP backups, but 
+echo           is compatible with CWM backups.
+echo.
+echo         * If the app fails, use the "S-OFF but no root?"
+echo           option in the Extras menu.
+echo.
 echo.
 echo  RECOVERY MENU
 echo ----------------------------------------------------------
-echo       1 - Flash TWRP
-echo       2 - Apply my ICS TWRP Theme
-echo       3 - Flash Regular CWM
-echo       4 - Flash CWM Touch
-echo       5 - Install 4ext Recovery Updater (Flash in app)
-echo       6 - Exit
+echo       1 - Install/run Recovery Updater (Flash 4eXT in app)
+echo       2 - Install zip
+echo       3 - Backup ROM
+echo       4 - Restore a backup
+echo       5 - Check MD5 of file on phone
+echo       6 - Check MD5 of file on computer
+echo       7 - Exit
 echo ----------------------------------------------------------
 set /p m=Choose what you want to do or hit ENTER for main menu. 
-IF %M%==1 (GOTO TWRP)
-IF %M%==2 (GOTO TWRPICS)
-IF %M%==3 (GOTO CWMREG)
-IF %M%==4 (GOTO CWMTOUCH)
-IF %M%==5 (GOTO 4ext)
-IF %M%==6 (
+IF %M%==1 (GOTO 4ext)
+IF %M%==2 (GOTO installzip)
+IF %M%==3 (GOTO backuprom)
+IF %M%==4 (GOTO restorerom)
+if %M%==5 (GOTO MD5Phone)
+IF %M%==6 (GOTO MD5Comp)
+IF %M%==7 (
 echo -- >>%log%
 GOTO EXIT
 )
@@ -651,220 +691,8 @@ GOTO MAIN
 )
 GOTO RECOVERY
 
-:TWRP
-echo Chose option 1 - Flash TWRP >>%log%
-:TWRP2
-cls
-echo ------------------------------
-echo           Flash TWRP         
-echo ------------------------------
-echo.
-echo Working...
-support_files\wget --quiet -O support_files\download\TWRP.img.md5 http://dl.dropbox.com/u/61129367/TWRP.img.md5
-support_files\md5sums support_files\download\TWRP.img>support_files\download\TWRP-here.md5 2>&1
-set /p twrpdl=<support_files\download\TWRP.img.md5
-set /p twrphere=<support_files\download\TWRP-here.md5
-echo Our checksum is     %twrphere% >>%log%
-echo Correct checksum is %twrpdl% >>%log%
-cls
-echo ------------------------------
-echo           Flash TWRP         
-echo ------------------------------
-echo.
-IF "%twrpdl%" == "%twrphere%" (GOTO flashtwrp)
-echo TWRP not found, or there is an update.
-echo Downloading TWRP...
-echo Updating/Getting TWRP >>%log%
-echo.
-IF EXIST support_files\download\TWRP.img (del support_files\download\TWRP.img)
-support_files\wget -O support_files\download\TWRP.img http://dl.dropbox.com/u/61129367/TWRP.img >>%log% 2>&1
-title                                            HTC Thunderbolt Tool %verno%
-GOTO TWRP2
-:flashtwrp
-cls
-echo ------------------------------
-echo           Flash TWRP         
-echo ------------------------------
-echo.
-echo Flashing TWRP... Please wait...
-echo Flashing TWRP >>%log%
-echo.
-del support_files\download\TWRP.img.md5
-del support_files\download\TWRP-here.md5
-support_files\adb reboot-bootloader
-support_files\fastboot flash recovery support_files\download\TWRP.img >>%log% 2>&1
-support_files\fastboot reboot >>%log% 2>&1
-support_files\adb wait-for-device
-support_files\adb reboot recovery
-echo.
-cls
-echo ------------------------------
-echo           Flash TWRP         
-echo ------------------------------
-echo.
-echo Phone is on its way to TWRP recovery.
-PING 1.1.1.1 -n 1 -w 4000 >NUL
-GOTO RECOVERY
-
-:CWMREG
-echo Chose option 3 - Flash Regular CWM >>%log%
-:CWMREG2
-cls
-echo ------------------------------
-echo           Flash CWM       
-echo ------------------------------
-echo.
-support_files\wget --quiet -O support_files\download\CWMReg.img.md5 http://dl.dropbox.com/u/61129367/cwmreg.img.md5
-support_files\md5sums support_files\download\CWMReg.img>support_files\download\CWM-here.md5 2>&1
-set /p cwmdl=<support_files\download\CWMReg.img.md5
-set /p cwmhere=<support_files\download\CWM-here.md5
-echo Our checksum is     %cwmhere% >>%log%
-echo Correct checksum is %cwmdl% >>%log%
-cls
-echo ------------------------------
-echo           Flash CWM        
-echo ------------------------------
-echo.
-IF "%cwmdl%" == "%cwmhere%" (GOTO flashcwm)
-echo Updating/Getting CWM >>%log%
-echo CWM not found, or there is an update.
-echo Downloading CWM...
-echo.
-IF EXIST support_files\download\CWMReg.img (del support_files\download\CWMReg.img)
-support_files\wget -O support_files\download\CWMReg.img http://dl.dropbox.com/u/61129367/cwmreg.img >>%log% 2>&1
-title                                            HTC Thunderbolt Tool %verno%
-GOTO CWMREG2
-:flashcwm
-echo Flashing CWM >>%log%
-echo Flashing CWM... Please wait...
-echo.
-del support_files\download\CWMReg.img.md5
-del support_files\download\CWM-here.md5
-support_files\adb reboot-bootloader
-support_files\fastboot flash recovery support_files\download\CWMReg.img >>%log% 2>&1
-support_files\fastboot reboot >>%log% 2>&1
-support_files\adb wait-for-device
-support_files\adb reboot recovery
-echo Done flashing >>%log%
-echo.
-cls
-echo ------------------------------
-echo           Flash CWM         
-echo ------------------------------
-echo.
-echo Phone is on its way to ClockWorkMod recovery.
-PING 1.1.1.1 -n 1 -w 4000 >NUL
-GOTO RECOVERY
-
-:TWRPICS
-echo Chose option 2 - Apply My ICS TWRP Theme
-:TWRPICS2
-cls
-echo ------------------------------
-echo         TWRP ICS Theme        
-echo ------------------------------
-echo.
-support_files\wget --quiet -O support_files\download\ICS.zip.md5 http://dl.dropbox.com/u/61129367/ICS.zip.md5
-support_files\md5sums support_files\download\ICS.zip>support_files\download\ICS.md5
-set /p themedl=<support_files\download\ICS.zip.md5
-set /p themehere=<support_files\download\ICS.md5
-echo Our checksum is     %themehere% >>%log%
-echo Correct checksum is %themedl% >>%log%
-cls
-echo ------------------------------
-echo         TWRP ICS Theme        
-echo ------------------------------
-echo.
-IF "%themedl%" == "%themehere%" (GOTO applytheme)
-echo Updating/Getting theme >>%log%
-echo Theme not found, or there is an update.
-echo Downloading theme...
-echo.
-IF EXIST support_files\download\ICS.zip(del support_files\download\ICS.zip)
-support_files\wget -O support_files\download\ICS.zip http://dl.dropbox.com/u/61129367/ICS.zip >>%log% 2>&1
-title                                            HTC Thunderbolt Tool %verno%
-GOTO TWRPICS2
-:applytheme
-cls
-echo ------------------------------
-echo         TWRP ICS Theme        
-echo ------------------------------
-echo.
-echo Applying theme...
-echo Applying theme >>%log%
-echo.
-del support_files\download\ICS.md5
-del support_files\download\ICS.zip.md5
-support_files\adb shell mkdir /sdcard/TWRP/theme >>%log% 2>&1
-support_files\adb push support_files\download\ICS.zip /sdcard/TWRP/theme/ui.zip >>%log% 2>&1
-support_files\adb reboot recovery
-support_files\adb kill-server >NUL 2>&1
-support_files\adb start-server >NUL 2>&1
-echo Done flashing >>%log%
-echo -- >>%log%
-echo.
-cls
-echo ------------------------------
-echo         TWRP ICS Theme        
-echo ------------------------------
-echo.
-echo Phone is on its way to TWRP recovery.
-PING 1.1.1.1 -n 1 -w 4000 >NUL
-GOTO RECOVERY
-
-:CWMTOUCH
-echo Chose option 4 - Flash CWM Touch >>%log%
-:CWMTOUCH2
-cls
-echo ------------------------------
-echo        Flash CWM Touch       
-echo ------------------------------
-echo.
-support_files\wget --quiet -O support_files\download\CWMTouch.img.md5 http://dl.dropbox.com/u/61129367/CWMTouch.img.md5
-support_files\md5sums support_files\download\CWMTouch.img>support_files\download\CWMTouch.md5
-set /p cwmtouchdl=<support_files\download\CWMTouch.img.md5
-set /p cwmtouchhere=<support_files\download\CWMTouch.md5
-echo Our checksum is         %cwmtouchhere% >>%log%
-echo The correct checksum is %cwmtouchdl% >>%log%
-del support_files\download\CWMTouch.img.md5
-del support_files\download\CWMTouch.md5
-cls
-echo ------------------------------
-echo        Flash CWM Touch       
-echo ------------------------------
-echo.
-IF "%cwmtouchdl%" == "%cwmtouchhere%" (GOTO flashcwmtouch)
-echo CWM Touch not found, or there is an update.
-echo Downloading CWM Touch...
-echo.
-echo Updating/Getting CWM Touch >>%log%
-IF EXIST support_files\download\CWMTouch.img (del support_files\download\CWMTouch.img)
-support_files\wget -O support_files\download\CWMTouch.img http://dl.dropbox.com/u/61129367/CWMTouch.img >>%log% 2>&1
-title                                            HTC Thunderbolt Tool %verno%
-GOTO CWMTOUCH2
-:flashcwmtouch
-echo Flashing CWM Touch... Please wait...
-echo Flashing CWM Touch >>%log%
-echo.
-support_files\adb reboot-bootloader
-support_files\fastboot flash recovery support_files\download\CWMTouch.img >>%log% 2>&1
-support_files\fastboot reboot >>%log% 2>&1
-support_files\adb wait-for-device
-support_files\adb reboot recovery
-echo Done flashing >>%log%
-echo -- >>%log%
-echo.
-cls
-echo ------------------------------
-echo        Flash CWM Touch       
-echo ------------------------------
-echo.
-echo Phone is on its way to ClockWorkMod Touch recovery.
-PING 1.1.1.1 -n 1 -w 4000 >NUL
-GOTO RECOVERY
-
 :4ext
-echo Chose Option 5 - Install 4ext Recovery Updater >>%log%
+echo Chose Option 1 - Install 4ext Recovery Updater >>%log%
 :4ext2
 cls
 echo ------------------------------
@@ -917,6 +745,189 @@ echo configure 4ext.
 echo.
 PING 1.1.1.1 -n 1 -w 4000 >NUL
 GOTO RECOVERY
+
+:installzip
+
+:backuprom
+echo Chose option 3 - Backup ROM >>%log%
+IF "%adbrt%" == "Yes" (GOTO backuprooted)
+echo  -Not ADB Rooted >>%log%
+cls
+echo ------------------------------
+echo           Backup ROM          
+echo ------------------------------
+echo.
+set /p backupname=What should we name the backup? 
+cls
+echo ------------------------------
+echo           Backup ROM          
+echo ------------------------------
+echo.
+echo Working...
+echo Naming backup %backupname% >>%log%
+echo backup_rom("/sdcard/clockworkmod/backup/%backupname%")); >support_files\backup
+IF "%recovery%" == "yes" (GOTO skipwaitbackup)
+support_files\adb reboot recovery
+:waitforrecobackup
+cls
+echo ------------------------------
+echo           Backup ROM          
+echo ------------------------------
+echo.
+echo Waiting for recovery...
+echo.
+IF EXIST support_files\here (del support_files\here)
+support_files\adb shell echo a>support_files\here
+set here=NULL
+set /p here=<support_files\here
+if "%here%" NEQ "a" (GOTO waitforrecobackup)
+PING 1.1.1.1 -n 1 -w 4000 >NUL
+:skipwaitbackup
+cls
+echo ------------------------------
+echo           Backup ROM          
+echo ------------------------------
+echo.
+echo Working...
+support_files\adb shell mount /cache >>%log% 2>&1
+support_files\adb push support_files\backup /cache/recovery/extendedcommand >>%log% 2>&1
+del support_files\backup
+support_files\adb reboot recovery
+cls
+echo ------------------------------
+echo           Backup ROM          
+echo ------------------------------
+echo.
+echo Phone will re-enter recovery, backup, and restart.
+PING 1.1.1.1 -n 1 -w 4000 >NUL
+GOTO RECOVERY
+:backuprooted
+echo  -ADB Rooted >>%log%
+cls
+echo ------------------------------
+echo           Backup ROM          
+echo ------------------------------
+echo.
+set /p backupname=What should we name the backup? 
+cls
+echo ------------------------------
+echo           Backup ROM          
+echo ------------------------------
+echo.
+echo Working...
+echo Naming backup %backupname% >>%log%
+echo backup_rom("/sdcard/clockworkmod/backup/%backupname%")); >support_files\backup
+support_files\adb push support_files\backup /cache/recovery/extendedcommand >>%log% 2>&1
+del support_files\backup
+support_files\adb reboot recovery
+cls
+echo ------------------------------
+echo           Backup ROM          
+echo ------------------------------
+echo.
+echo Phone will backup and restart.
+PING 1.1.1.1 -n 1 -w 4000 >NUL
+GOTO RECOVERY
+
+:restorerom
+echo Chose option 4 - Restore Backup >>%log%
+cls
+echo ------------------------------
+echo         Restore backup        
+echo ------------------------------
+echo.
+echo ----------------------------------------------------------
+support_files\adb shell ls /sdcard/clockworkmod/backup
+echo ----------------------------------------------------------
+echo Which backup do you want to restore? 
+set /p restorename=(Type the full name, case sensitive.) 
+cls
+echo ------------------------------
+echo         Restore backup        
+echo ------------------------------
+echo.
+echo Working...
+echo Restoring %restorename% >>%log%
+echo restore_rom("/sdcard/clockworkmod/backup/%restorename%");>support_files\restore
+IF "%adbrt%" == "Yes" (GOTO restorerooted)
+echo  -Not ADB Rooted >>%log%
+IF "%recovery%" == "yes" (GOTO skipwaitrestore)
+support_files\adb reboot recovery
+:waitforrecorestore
+cls
+echo ------------------------------
+echo         Restore backup        
+echo ------------------------------
+echo.
+echo Waiting for recovery...
+echo.
+IF EXIST support_files\here (del support_files\here)
+support_files\adb shell echo a>support_files\here
+set here=NULL
+set /p here=<support_files\here
+if "%here%" NEQ "a" (GOTO waitforrecorestore)
+PING 1.1.1.1 -n 1 -w 4000 >NUL
+:skipwaitrestore
+cls
+echo ------------------------------
+echo         Restore backup        
+echo ------------------------------
+echo.
+echo Working...
+echo Mounting and pushing >>%log%
+support_files\adb shell mount /cache >>%log% 2>&1
+support_files\adb push support_files\restore /cache/recovery/extendedcommand >>%log% 2>&1
+del support_files\restore
+support_files\adb reboot recovery
+cls
+echo ------------------------------
+echo         Restore backup        
+echo ------------------------------
+echo.
+echo Phone will re-enter recovery, restore, and restart.
+PING 1.1.1.1 -n 1 -w 4000 >NUL
+GOTO RECOVERY
+:restorerooted
+echo  -ADB Rooted >>%log%
+cls
+echo ------------------------------
+echo         Restore backup        
+echo ------------------------------
+echo.
+echo Working...
+echo Pushing to extendedcommand >>%log%
+support_files\adb push support_files\restore /cache/recovery/extendedcommand >>%log% 2>&1
+del support_files\restore
+support_files\adb reboot recovery
+cls
+echo ------------------------------
+echo         Restore backup        
+echo ------------------------------
+echo.
+echo Phone will restore and restart.
+PING 1.1.1.1 -n 1 -w 4000 >NUL
+GOTO RECOVERY
+
+:MD5Phone
+echo Chose option 5 - Check MD5Sum of file on phone >>%log%
+
+:MD5Comp
+echo Chose option 6 - Check MD5Sum of file on computer >>%log%
+cls
+echo ------------------------------
+echo           MD5 Checker         
+echo ------------------------------
+echo.
+echo Please have the file in the folder with this.
+echo.
+set /p filename=What is the filename? (And extention) 
+IF NOT EXIST %filename% (
+echo "%filename%" does not exist! 
+echo "%filename%" does not exist! >>%log%
+)
+support_files\md5sums -n %filename% >support_files\md5
+
+
 ::
 :: -----------------------------------------------------------------------
 ::
@@ -1081,6 +1092,7 @@ echo       3 - Install Busybox
 ::echo       6 - Re-enable shutter sounds
 echo       4 - Clear logs
 echo       5 - Exit
+echo       6 - S-OFF but no root?
 echo       ** MORE COMING SOON **
 echo ----------------------------------------------------------
 set /p m=Choose what you want to do or hit ENTER for main menu. 
@@ -1116,6 +1128,7 @@ IF %M%==5 (
 echo -- >>%log%
 GOTO EXIT
 )
+IF %M%==6 (GOTO SOFFNOROOT)
 IF %M%==NULL (GOTO MAIN)
 GOTO EXTRAS
 :: ------------
@@ -1494,13 +1507,96 @@ echo.
 echo       See the accompanying README.txt for liscensing information.
 echo.
 echo ----------------------------------------------------------
-echo Press enter to return to the main menu...
+echo Press ENTER to return to the main menu...
 pause >NUL
 color 0b
 GOTO main
 ::
 :: -----------------------------------------------------------------------
 ::
+
+:SOFFNOROOT
+echo Chose option 6 - S-OFF but no root >>%log%
+:SOFFNOROOT2
+cls
+echo ------------------------------
+echo       Install Superuser      
+echo ------------------------------
+echo.
+IF NOT EXIST support_files\download\su.zip (
+echo Downloading Superuser files...
+echo Getting su >>%log%
+support_files\wget -O support_files\download\su.zip http://dl.dropbox.com/u/61129367/su.zip >>%log% 2>&1
+title                                            HTC Thunderbolt Tool %verno%
+support_files\md5sums support_files\download\su.zip>support_files\download\su.zip.md5
+set /p SUmd5=<support_files\download\su.zip.md5
+del support_files\download\su.zip.md5
+echo Our checksum is         %SUmd5% >>%log%
+echo The correct checksum is FC462FA0630379EDBE10006B1D19D9B1  support_files\download\su.zip >>%log%
+IF "%SUmd5%" NEQ "FC462FA0630379EDBE10006B1D19D9B1  support_files\download\su.zip" (
+del support_files\download\su.zip
+GOTO SOFFNOROOT2
+)
+)
+:CWMINSTALLSU
+cls
+echo ------------------------------
+echo       Install Superuser      
+echo ------------------------------
+echo.
+support_files\wget --quiet -O support_files\download\CWMReg.img.md5 http://dl.dropbox.com/u/61129367/cwmreg.img.md5
+support_files\md5sums support_files\download\CWMReg.img>support_files\download\CWM-here.md5 2>&1
+set /p cwmdl=<support_files\download\CWMReg.img.md5
+set /p cwmhere=<support_files\download\CWM-here.md5
+del support_files\download\CWMReg.img.md5
+del support_files\download\CWM-here.md5
+echo Our checksum is     %cwmhere% >>%log%
+echo Correct checksum is %cwmdl% >>%log%
+echo.
+IF "%cwmdl%" == "%cwmhere%" (GOTO flashcwmSU)
+echo Updating/Getting CWM >>%log%
+echo CWM not found, or there is an update.
+echo Downloading CWM...
+echo.
+IF EXIST support_files\download\CWMReg.img (del support_files\download\CWMReg.img)
+support_files\wget -O support_files\download\CWMReg.img http://dl.dropbox.com/u/61129367/cwmreg.img >>%log% 2>&1
+title                                            HTC Thunderbolt Tool %verno%
+GOTO CWMINSTALLSU
+:flashcwmSU
+cls
+echo ------------------------------
+echo       Install Superuser      
+echo ------------------------------
+echo.
+echo Flashing CWM >>%log%
+echo Flashing CWM... Please wait...
+echo.
+support_files\adb reboot-bootloader
+support_files\fastboot flash recovery support_files\download\CWMReg.img >>%log% 2>&1
+support_files\fastboot reboot >>%log% 2>&1
+support_files\adb wait-for-device
+support_files\adb reboot recovery
+echo Done flashing >>%log%
+cls
+echo ------------------------------
+echo       Install Superuser      
+echo ------------------------------
+echo.
+echo If the phone is stuck on the white HTC Screen for 20+ secs, pull the battery,
+echo unplug phone, put battery back in, hold volume down and power until HBOOT 
+echo shows, and select recovery.
+echo.
+echo When you get to recovery mode, using the volume buttons to navigate and
+echo power to select, select Install zip from SD, then Choose Zip from SD.
+echo Then, scroll until you see su.zip and select it. Then select yes.
+echo.
+echo Once it flashes, hit back and then select Reboot system now.
+echo.
+echo Your phone should reboot and be rooted :)
+echo.
+echo Press ENTER to return to the extras menu...
+PAUSE >NUL
+GOTO EXTRAS
 
 :EXIT
 echo Exiting... >>%log%
@@ -1510,14 +1606,21 @@ ENDLOCAL
 exit
 
 :UNZIP-ERR
+echo Extraction error! >>%log%
 cls
 color 0c
 echo.
-echo It appears that you did not unzip the file correctly. 
-echo Right click on the zip, and click extract all.
-echo Make sure "Show extracted files when complete" is selected,
-echo and click extract. Then run ThunderboltTool.bat in the folder
-echo that pops up.
+echo It appears that there was an error extracting.
+echo Try redownloading and re-running.
+echo.
+echo Files necessary:
+echo.
+echo           Driver - %dv%
+echo    support_files - %sf%
+echo           Readme - %rm%
+echo           Driver - %dv% >>%log%
+echo    support_files - %sf% >>%log%
+echo           Readme - %rm% >>%log%
 echo.
 echo Press ENTER to exit...
 pause >NUL

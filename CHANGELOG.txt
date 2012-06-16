@@ -1,4 +1,22 @@
+---------------------------------------------------
+v0.2b1 - Unreleased
 
+-*Made EVERYTHING compatible with recovery mode!!!
+-*Made 4eXT the "standard" recovery!!!
+-*Redid the entire recovery menu, now has many 
+ functions like backup, restore, and install.
+-Other small tweaks/fixes
+-Detects if su binary is old or non-existent
+-Gets android version for menu
+-*Phone not connected and waiting for recovery 
+ prompts no longer flicker and are instant
+-Redid unrooter screen
+-Text edit in rooter
+
+---------------------------------------------------
+v0.1b4 - 6/13/12 (?)
+
+-Misc fixes
 
 ---------------------------------------------------
 v0.1b3 - 6/9/12
@@ -14,6 +32,11 @@ OTA Update @ 10:12 PM EST
 
 -Fixed SED.zip fetch. (Thanks, daz of Thunderbolt
  Forums!)
+
+OTA Updates from approx. 11 PM - 1:09 AM EST
+
+-Fixed rooter. There should be no other issues with 
+ it.
 
 ---------------------------------------------------
 v0.1b2 - 6/9/12
