@@ -1,17 +1,27 @@
 ---------------------------------------------------
 v0.2b1 - Unreleased
 
--*Made EVERYTHING compatible with recovery mode!!!
--*Made 4eXT the "standard" recovery!!!
--*Redid the entire recovery menu, now has many 
+-Made EVERYTHING compatible with recovery mode!!!
+ (This does not include the recovery menu sadly)
+-Made 4eXT the "standard" recovery!!!
+-Redid the entire recovery menu, now has many 
  functions like backup, restore, and install.
 -Other small tweaks/fixes
 -Detects if su binary is old or non-existent
 -Gets android version for menu
--*Phone not connected and waiting for recovery 
- prompts no longer flicker and are instant
+-Phone not connected and waiting for recovesry 
+ prompts no longer flicker
 -Redid unrooter screen
 -Text edit in rooter
+-Removed exit options from menus, simply hit enter
+ on the main menu to exit
+-Auto detects correct push of Stock RUU in unrooter
+-Main menu now says extras menu rather than extras
+-No "error: device not found" if the phone is not
+ connected on tool startup
+-No "error: device not found" on some "Waiting for
+ recovery"s.
+-The word enter is no longer capatilized.
 
 ---------------------------------------------------
 v0.1b4 - 6/13/12 (?)

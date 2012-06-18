@@ -105,9 +105,7 @@ echo Getting necessary files...
 echo Getting sed >>%log%
 support_files\wget -O support_files\download\sed.zip http://dl.dropbox.com/u/61129367/SED.zip >>%log% 2>&1
 title                                            HTC Thunderbolt Tool %verno%
-support_files\md5sums support_files\download\sed.zip>support_files\download\sed.zip.md5
-set /p sedmd5=<support_files\download\sed.zip.md5
-del support_files\download\sed.zip.md5
+FOR /F "tokens=1 delims=" %%a in ( 'support_files\md5sums support_files\download\sed.zip' ) do ( set sedmd5=%%a )
 echo Our checksum is         %sedmd5% >>%log%
 echo The correct checksum is 5F4BA3E44B33934E80257F3948970868  support_files\download\sed.zip >>%log%
 IF "%sedmd5%" NEQ "5F4BA3E44B33934E80257F3948970868  support_files\download\sed.zip" (
@@ -141,10 +139,12 @@ set bootloader=Unknown
 set adbrt=Unknown
 set here=NULL
 ::Seeing if phone is online
-:: Old code
-:: -support_files\adb shell echo a>support_files\here
-FOR /F "tokens=1 delims=:" %%a in ( 'support_files\adb shell echo here:1' ) do ( set here=%%a )
-if "%here%"=="here " (goto MAIN2)
+IF EXIST support_files\here (del support_files\here)
+support_files\adb shell echo a>support_files\here 2>&1
+set here=NULL
+set /p here=<support_files\here
+del support_files\here
+if "%here%" == "a" (GOTO MAIN2)
 ::If the script is still going at this point,
 ::and has not went to :MAIN2, we will set a 
 ::variable that tells the program that the 
@@ -158,6 +158,7 @@ set warn=
 echo Getting phone info...
 echo Getting phone info... >>%log%
 echo -- >>%log%
+support_files\adb shell mkdir /sdcard/tbolt-tool >NUL 2>&1
 ::My workaround to get this to work in recovery mode (Just in case)
 ::Any addidtional /system/bin's before getprop are for this reason also.
 FOR /F "tokens=1 delims=" %%a in ( 'support_files\adb shell mount system' ) do ( set bv=%%a )
@@ -190,7 +191,7 @@ IF "%adbroot%" == "0 " (set adbrt=Yes) ELSE (set adbrt=No)
 IF "%recovery%" == "yes" (Set adbrt=Yes)
 ::Seeing if su is updated/installed
 set su=yes
-for /f "tokens=1 delims=" %%a in ( 'support_files\adb shell su -v' ) do ( set sutest=%%a )
+for /f "tokens=1 delims=" %%a in ( 'support_files\adb shell /system/bin/su -v' ) do ( set sutest=%%a )
 IF "%sutest%" NEQ "3.0.3.2 " (set su=old)
 IF "%sutest%" == "/system/bin/sh: su: not found " (set su=no)
 echo Bootloader: %bl% %bootloader% >>%log%
@@ -259,20 +260,19 @@ echo       1 - Unroot
 echo       2 - Recovery menu 
 echo       3 - Unbrick menu  ** COMING SOON **
 echo       4 - Boot menu
-echo       5 - Extras
+echo       5 - Extras menu
 echo       6 - About
-echo       7 - Exit
 echo --------------------------------------------------------
-set /p m=Choose what you want to do. 
+set /p m=Choose what you want to do or hit enter to exit. 
 IF %M%==1 (GOTO UNROOT)
 IF %M%==2 (GOTO RECOVERY)
 IF %M%==3 (GOTO UNBRICK)
 IF %M%==4 (GOTO BOOT)
 IF %M%==5 (GOTO EXTRAS)
 IF %M%==6 (GOTO ABOUT)
-IF %M%==7 (
-GOTO EXIT
+IF %M%==NULL (
 echo -- >>%log%
+GOTO EXIT
 )
 GOTO MAIN
 
@@ -544,17 +544,19 @@ echo ------------------------------
 echo            Unrooter            
 echo ------------------------------
 echo. 
-echo Pushing stock RUU to sdcard... 
+echo Pushing stock RUU to SDCard... 
 echo This will take a few minutes...
 echo.
 echo Just in case of PG05IMG >>%log%
 support_files\adb shell rm /sdcard/PG05IMG.zip >>%log% 2>&1
 echo Pushing files >>%log%
 support_files\adb push support_files\unroot\Stock-ROM.zip /sdcard/PG05IMG.zip >support_files\push 2>&1
+support_files\cat support_files/push >>%log% 2>&1
 for /f "tokens=2 delims=(" %%a in ( 'support_files\cat support_files/push' ) do ( set push1=%%a )
 echo %push1% >support_files\push
 for /f "tokens=1 delims=i" %%a in ( 'support_files\cat support_files/push' ) do ( set push2=%%a )
-IF "%push2%" NEQ "462205613 bytes  " (goto badpush) else (goto good)
+IF "%push2%" == "462205613 bytes  " (goto good)
+del support_files\push
 :badpush
 set m=NULL
 cls
@@ -569,12 +571,11 @@ echo Please make sure Stay Awake and
 echo Charge Only are enabled. The phone
 echo screen must stay on for the push.
 echo.
-echo Press ENTER to repush...
+echo Press enter to repush...
 pause >NUL
  goto REPUSH
 :GOOD
 echo File pushed >>%log%
-del support_files\unroot\filepush
 cls
 echo ------------------------------
 echo            Unrooter            
@@ -650,6 +651,13 @@ GOTO MAIN
 ::
 
 :RECOVERY
+::support_files\adb shell am start -a EXT_RecoveryInterface -e read_from_prop /sdcard/test.prop
+::backup.name=my-Test-Backup
+::factory.reset=true
+::wipe.cache=true
+::wipe.dalvik=true
+::install1=/sdcard/test1.zip
+::install2=/sdcard/test2.zip
 set m=NULL
 cls
 echo Loading recovery menu >>%log%
@@ -670,21 +678,14 @@ echo       1 - Install/run Recovery Updater (Flash 4eXT in app)
 echo       2 - Install zip
 echo       3 - Backup ROM
 echo       4 - Restore a backup
-echo       5 - Check MD5 of file on phone
-echo       6 - Check MD5 of file on computer
-echo       7 - Exit
+echo       5 - Check MD5 of file
 echo ----------------------------------------------------------
-set /p m=Choose what you want to do or hit ENTER for main menu. 
+set /p m=Choose what you want to do or hit enter for main menu. 
 IF %M%==1 (GOTO 4ext)
 IF %M%==2 (GOTO installzip)
 IF %M%==3 (GOTO backuprom)
 IF %M%==4 (GOTO restorerom)
-if %M%==5 (GOTO MD5Phone)
-IF %M%==6 (GOTO MD5Comp)
-IF %M%==7 (
-echo -- >>%log%
-GOTO EXIT
-)
+if %M%==5 (GOTO MD5)
 IF %M%==NULL (
 echo -- >>%log%
 GOTO MAIN
@@ -747,11 +748,104 @@ PING 1.1.1.1 -n 1 -w 4000 >NUL
 GOTO RECOVERY
 
 :installzip
+echo Chose option 2 - Install zip >>%log%
+cls
+echo ------------------------------
+echo          Install zip          
+echo ------------------------------
+echo.
+echo Make sure the zip is in the folder with
+echo this and is the only .zip in the folder!
+echo.
+echo Press enter when you're ready to install.
+pause >NUL
+:recheckzip
+cls
+echo ------------------------------
+echo          Install zip          
+echo ------------------------------
+echo.
+echo Preparing zip installer...
+IF NOT EXIST *.zip (GOTO nozip)
+MOVE *.zip support_files\install.zip >support_files\mv 2>&1
+set /p mv=<support_files\mv
+del support_files\mv
+IF "%mv%" == "Cannot move multiple files to a single file." (goto morezip) ELSE (GOTO repushinstallzip)
+:morezip
+cls
+echo ------------------------------
+echo          Install zip          
+echo ------------------------------
+echo.
+echo It appears that there is more than
+echo one .zip in the folder. Please remove
+echo the one not being used and press enter.
+PAUSE >NUL
+goto recheckzip
+:nozip
+echo No zip! >>%log%
+cls
+echo ------------------------------
+echo          Install zip          
+echo ------------------------------
+echo.
+echo I can't find the .zip. Did you put 
+echo it in the folder with this tool?
+echo.
+echo Press enter to retry.
+pause >NUL
+GOTO recheckzip
+:repushinstallzip
+cls
+echo ------------------------------
+echo          Install zip          
+echo ------------------------------
+echo.
+echo Pushing zip to sdcard...
+support_files\adb shell rm /sdcard/tbolt-tool/backup.prop >NUL 2>&1
+support_files\adb shell rm /sdcard/tbolt-tool/install.prop >NUL 2>&1
+support_files\adb shell rm /sdcard/tbolt-tool/install.zip >NUL 2>&1
+support_files\adb push support_files\install.zip /sdcard/tbolt-tool/install.zip >>%log% 2>&1
+support_files\adb shell ls /sdcard/tbolt-tool/ >support_files\push
+set /p push=<support_files\push
+del support_files\push
+IF "%push%" NEQ "install.zip" (GOTO badinstallpush)
+echo install_zip("/sdcard/tbolt-tool/install.zip"); >support_files\install
+support_files\adb push support_files\install /data/local/install
+del support_files\install
+support_files\adb shell /system/bin/su --command mv /data/local/install /cache/recovery/extendedcommand
+pause
+move support_files\install.zip InstalledZip.zip >>%log% 2>&1
+support_files\adb reboot recovery
+cls
+echo ------------------------------
+echo          Install zip          
+echo ------------------------------
+echo.
+echo File will install and phone will reboot.
+PING 1.1.1.1 -n 1 -w 4000 >NUL
+GOTO RECOVERY
+
+:badinstallpush
+echo Bad file push >>%log%
+cls
+echo ------------------------------
+echo          Install zip          
+echo ------------------------------
+echo.
+echo It appears thete was an error 
+echo pushing the file.
+echo.
+echo Please make sure Stay Awake and
+echo Charge Only are enabled. The phone
+echo screen must stay on for the push.
+echo.
+echo Press enter to repush...
+pause >NUL
+GOTO repushinstallzip
 
 :backuprom
 echo Chose option 3 - Backup ROM >>%log%
-IF "%adbrt%" == "Yes" (GOTO backuprooted)
-echo  -Not ADB Rooted >>%log%
 cls
 echo ------------------------------
 echo           Backup ROM          
@@ -765,61 +859,9 @@ echo ------------------------------
 echo.
 echo Working...
 echo Naming backup %backupname% >>%log%
-echo backup_rom("/sdcard/clockworkmod/backup/%backupname%")); >support_files\backup
-IF "%recovery%" == "yes" (GOTO skipwaitbackup)
-support_files\adb reboot recovery
-:waitforrecobackup
-cls
-echo ------------------------------
-echo           Backup ROM          
-echo ------------------------------
-echo.
-echo Waiting for recovery...
-echo.
-IF EXIST support_files\here (del support_files\here)
-support_files\adb shell echo a>support_files\here
-set here=NULL
-set /p here=<support_files\here
-if "%here%" NEQ "a" (GOTO waitforrecobackup)
-PING 1.1.1.1 -n 1 -w 4000 >NUL
-:skipwaitbackup
-cls
-echo ------------------------------
-echo           Backup ROM          
-echo ------------------------------
-echo.
-echo Working...
-support_files\adb shell mount /cache >>%log% 2>&1
-support_files\adb push support_files\backup /cache/recovery/extendedcommand >>%log% 2>&1
-del support_files\backup
-support_files\adb reboot recovery
-cls
-echo ------------------------------
-echo           Backup ROM          
-echo ------------------------------
-echo.
-echo Phone will re-enter recovery, backup, and restart.
-PING 1.1.1.1 -n 1 -w 4000 >NUL
-GOTO RECOVERY
-:backuprooted
-echo  -ADB Rooted >>%log%
-cls
-echo ------------------------------
-echo           Backup ROM          
-echo ------------------------------
-echo.
-set /p backupname=What should we name the backup? 
-cls
-echo ------------------------------
-echo           Backup ROM          
-echo ------------------------------
-echo.
-echo Working...
-echo Naming backup %backupname% >>%log%
-echo backup_rom("/sdcard/clockworkmod/backup/%backupname%")); >support_files\backup
-support_files\adb push support_files\backup /cache/recovery/extendedcommand >>%log% 2>&1
-del support_files\backup
-support_files\adb reboot recovery
+support_files\adb shell rm /sdcard/tbolt-tool/backup.prop >NUL 2>&1
+support_files\adb shell "echo "backup.name=%backupname%" >/sdcard/tbolt-tool/backup.prop"
+support_files\adb shell am start -a EXT_RecoveryInterface -e read_from_prop /sdcard/tbolt-tool/backup.prop >>%log% 2>&1
 cls
 echo ------------------------------
 echo           Backup ROM          
@@ -851,9 +893,7 @@ echo Restoring %restorename% >>%log%
 echo restore_rom("/sdcard/clockworkmod/backup/%restorename%");>support_files\restore
 IF "%adbrt%" == "Yes" (GOTO restorerooted)
 echo  -Not ADB Rooted >>%log%
-IF "%recovery%" == "yes" (GOTO skipwaitrestore)
 support_files\adb reboot recovery
-:waitforrecorestore
 cls
 echo ------------------------------
 echo         Restore backup        
@@ -861,13 +901,14 @@ echo ------------------------------
 echo.
 echo Waiting for recovery...
 echo.
+:waitforrecorestore
 IF EXIST support_files\here (del support_files\here)
-support_files\adb shell echo a>support_files\here
+support_files\adb shell echo a>support_files\here 2>&1
 set here=NULL
 set /p here=<support_files\here
+del support_files\here
 if "%here%" NEQ "a" (GOTO waitforrecorestore)
 PING 1.1.1.1 -n 1 -w 4000 >NUL
-:skipwaitrestore
 cls
 echo ------------------------------
 echo         Restore backup        
@@ -908,26 +949,6 @@ echo Phone will restore and restart.
 PING 1.1.1.1 -n 1 -w 4000 >NUL
 GOTO RECOVERY
 
-:MD5Phone
-echo Chose option 5 - Check MD5Sum of file on phone >>%log%
-
-:MD5Comp
-echo Chose option 6 - Check MD5Sum of file on computer >>%log%
-cls
-echo ------------------------------
-echo           MD5 Checker         
-echo ------------------------------
-echo.
-echo Please have the file in the folder with this.
-echo.
-set /p filename=What is the filename? (And extention) 
-IF NOT EXIST %filename% (
-echo "%filename%" does not exist! 
-echo "%filename%" does not exist! >>%log%
-)
-support_files\md5sums -n %filename% >support_files\md5
-
-
 ::
 :: -----------------------------------------------------------------------
 ::
@@ -967,9 +988,8 @@ echo       3 - Reboot recovery
 echo       4 - Reboot to fastboot
 echo       5 - Reboot to hboot
 echo       6 - Power off
-echo       7 - Exit
 echo ----------------------------------------------------------
-set /p m=Choose what you want to do or hit ENTER for main menu. 
+set /p m=Choose what you want to do or hit enter for main menu. 
 IF %M%==1 (
 cls
 echo Please wait...
@@ -1015,10 +1035,6 @@ support_files\adb reboot-bootloader
 support_files\fastboot oem powerdown >>%log% 2>&1
 goto boot
 )
-IF %M%==7 (
-echo -- >>%log%
-GOTO EXIT
-)
 IF %M%==NULL (GOTO MAIN)
 GOTO rootBOOT
 
@@ -1032,9 +1048,8 @@ echo       1 - Reboot
 echo       2 - Reboot recovery
 echo       3 - Reboot to fastboot
 echo       4 - Power off
-echo       5 - Exit
 echo ----------------------------------------------------------
-set /p m=Choose what you want to do or hit ENTER for main menu. 
+set /p m=Choose what you want to do or hit enter for main menu. 
 IF %M%==1 (
 cls
 echo Please wait...
@@ -1065,10 +1080,6 @@ support_files\adb reboot-bootloader
 support_files\fastboot oem powerdown >>%log% 2>&1
 goto boot
 )
-IF %M%==5 (
-echo -- >>%log%
-GOTO EXIT
-)
 IF %M%==NULL (GOTO MAIN)
 GOTO BOOT
 ::
@@ -1091,11 +1102,10 @@ echo       3 - Install Busybox
 ::echo       5 - Disable shutter sounds *Illegal in some places!
 ::echo       6 - Re-enable shutter sounds
 echo       4 - Clear logs
-echo       5 - Exit
-echo       6 - S-OFF but no root?
+echo       5 - S-OFF but no root?
 echo       ** MORE COMING SOON **
 echo ----------------------------------------------------------
-set /p m=Choose what you want to do or hit ENTER for main menu. 
+set /p m=Choose what you want to do or hit enter for main menu. 
 IF %M%==1 (GOTO OTABlock)
 ::IF %M%==3 (GOTO SUUpdates)
 IF %M%==2 (
@@ -1124,11 +1134,7 @@ MOVE %log% %log%.bak
 del logs\*.log
 MOVE %log%.bak %log%
 )
-IF %M%==5 (
-echo -- >>%log%
-GOTO EXIT
-)
-IF %M%==6 (GOTO SOFFNOROOT)
+IF %M%==5 (GOTO SOFFNOROOT)
 IF %M%==NULL (GOTO MAIN)
 GOTO EXTRAS
 :: ------------
@@ -1144,7 +1150,6 @@ echo ------------------------------
 echo.
 echo Rebooting to recovery...
 support_files\adb reboot recovery
-:waitforrecodisable
 cls
 echo ------------------------------
 echo      OTA Update Disabler
@@ -1152,8 +1157,9 @@ echo ------------------------------
 echo.
 echo Waiting for recovery...
 echo.
+:waitforrecodisable
 IF EXIST support_files\here (del support_files\here)
-support_files\adb shell echo a>support_files\here
+support_files\adb shell echo a>support_files\here 2>&1
 set here=NULL
 set /p here=<support_files\here
 if "%here%" NEQ "a" (GOTO waitforrecodisable)
@@ -1244,7 +1250,6 @@ echo  -Not ADB Rooted >>%log%
 echo Rebooting to recovery...
 echo.
 support_files\adb reboot recovery
-:waitforrecobbox
 cls
 echo ------------------------------
 echo        Busybox installer
@@ -1252,8 +1257,9 @@ echo ------------------------------
 echo.
 echo Waiting for recovery...
 echo.
+:waitforrecobbox
 IF EXIST support_files\here (del support_files\here)
-support_files\adb shell echo a>support_files\here
+support_files\adb shell echo a>support_files\here 2>&1
 set here=NULL
 set /p here=<support_files\here
 if "%here%" NEQ "a" (GOTO waitforrecobbox)
@@ -1309,145 +1315,6 @@ echo Done! Phone is rebooting.
 PING 1.1.1.1 -n 1 -w 4000 >NUL
 GOTO EXTRAS
 
-:SHUTTERDisable
-echo Chose option 5 - Remove shutter sounds >>%log%
-IF "%adbrt%"=="Yes" (GOTO shutterrooted)
-echo  -Not ADB Rooted >>%log%
-cls
-echo ------------------------------
-echo     Shutter sound remover
-echo ------------------------------
-echo.
-echo Rebooting to recovery...
-echo.
-support_files\adb reboot recovery
-:waitforrecoshutter
-cls
-echo ------------------------------
-echo     Shutter sound remover
-echo ------------------------------
-echo.
-echo Waiting for recovery...
-echo.
-IF EXIST support_files\here (del support_files\here)
-support_files\adb shell echo a>support_files\here
-set here=NULL
-set /p here=<support_files\here
-if "%here%" NEQ "a" (GOTO waitforrecoshutter)
-del support_files\here
-PING 1.1.1.1 -n 1 -w 4000 >NUL
-echo Working...
-echo Working >>%log%
-support_files\adb shell mount /system >>%log% 2>&1
-support_files\adb shell mv /system/media/audio/ui/camera_click.ogg /system/media/audio/ui/camera_click.bak
-support_files\adb shell mv /system/media/audio/ui/VideoRecord.ogg /system/media/audio/ui/VideoRecord.bak
-support_files\adb reboot
-support_files\adb kill-server >NUL 2>&1
-support_files\adb start-server >NUL 2>&1
-cls
-echo ------------------------------
-echo     Shutter sound remover
-echo ------------------------------
-echo.
-echo Done! Phone is rebooting.
-PING 1.1.1.1 -n 1 -w 4000 >NUL
-GOTO EXTRAS
-:shutterrooted
-echo  -ADB Rooted >>%log%
-cls
-echo ------------------------------
-echo     Shutter sound remover
-echo ------------------------------
-echo.
-echo Working...
-echo Working >>%log%
-support_files\adb remount >>%log% 2>&1
-support_files\adb shell mv /system/media/audio/ui/camera_click.ogg /system/media/audio/ui/camera_click.bak
-support_files\adb shell mv /system/media/audio/ui/VideoRecord.ogg /system/media/audio/ui/VideoRecord.bak
-support_files\adb reboot
-support_files\adb kill-server >NUL 2>&1
-support_files\adb start-server >NUL 2>&1
-cls
-echo ------------------------------
-echo     Shutter sound remover
-echo ------------------------------
-echo.
-echo Done! Phone is rebooting.
-PING 1.1.1.1 -n 1 -w 4000 >NUL
-GOTO EXTRAS
-
-:SHUTTEREnable
-echo Chose option 6 - Restore shutter sounds >>%log%
-IF "%adbrt%"=="Yes" (GOTO rshutterrooted)
-echo  -Not ADB Rooted >>%log%
-cls
-echo ------------------------------
-echo    Shutter sound restorer
-echo ------------------------------
-echo.
-echo Rebooting to recovery...
-echo.
-support_files\adb reboot recovery
-:rwaitforrecoshutter
-cls
-echo ------------------------------
-echo    Shutter sound restorer
-echo ------------------------------
-echo.
-echo Waiting for recovery...
-echo.
-IF EXIST support_files\here (del support_files\here)
-support_files\adb shell echo a>support_files\here
-set here=NULL
-set /p here=<support_files\here
-if "%here%" NEQ "a" (GOTO rwaitforrecoshutter)
-del support_files\here
-PING 1.1.1.1 -n 1 -w 4000 >NUL
-cls
-echo ------------------------------
-echo    Shutter sound restorer
-echo ------------------------------
-echo.
-echo Working...
-echo Working >>%log%
-support_files\adb shell mount /system >>%log% 2>&1
-support_files\adb shell mv /system/media/audio/ui/camera_click.bak /system/media/audio/ui/camera_click.ogg
-support_files\adb shell mv /system/media/audio/ui/VideoRecord.bak /system/media/audio/ui/VideoRecord.ogg
-support_files\adb reboot
-support_files\adb kill-server >NUL 2>&1
-support_files\adb start-server >NUL 2>&1
-cls
-echo ------------------------------
-echo    Shutter sound restorer
-echo ------------------------------
-echo.
-echo Done! Phone is rebooting.
-PING 1.1.1.1 -n 1 -w 4000 >NUL
-GOTO EXTRAS
-:rshutterrooted
-echo  -ADB Rooted >>%log%
-cls
-echo ------------------------------
-echo    Shutter sound restorer
-echo ------------------------------
-echo.
-echo Working...
-echo Working >>%log%
-support_files\adb remount >>%log% 2>&1
-support_files\adb shell mv /system/media/audio/ui/camera_click.bak /system/media/audio/ui/camera_click.ogg
-support_files\adb shell mv /system/media/audio/ui/VideoRecord.bak /system/media/audio/ui/VideoRecord.ogg
-support_files\adb reboot
-support_files\adb kill-server >NUL 2>&1
-support_files\adb start-server >NUL 2>&1
-cls
-echo ------------------------------
-echo    Shutter sound restorer
-echo ------------------------------
-echo.
-echo Done! Phone is rebooting.
-PING 1.1.1.1 -n 1 -w 4000 >NUL
-GOTO EXTRAS
-
 :splash
 cls
 echo.
@@ -1466,19 +1333,18 @@ echo       4 - Convert .img to .png format for editing
 echo       5 - Make backup of current splash screen from phone
 echo       6 - Fastboot flash existing splash screen .img
 echo       7 - Thank TrueBlue_Drew on XDA for this function
-echo       8 - Exit
 echo ----------------------------------------------------------
-set /p m=Choose what you want to do or hit ENTER for main menu. 
-IF %menu%==2 (goto png)
-IF %menu%==3 (goto jpg)
-IF %menu%==4 (goto bmp)
-IF %menu%==5 (goto img)
-IF %menu%==6 (goto backup)
-IF %menu%==7 (goto flash)
-IF %menu%==8 (goto thank)
-IF %menu%==0 (goto quit)
+set /p m=Choose what you want to do or hit enter for main menu. 
+IF %menu%==1 (goto png)
+IF %menu%==2 (goto jpg)
+IF %menu%==3 (goto bmp)
+IF %menu%==4 (goto img)
+IF %menu%==5 (goto backup)
+IF %menu%==6 (goto flash)
+IF %menu%==7 (goto thank)
 IF %M%==NULL (GOTO MAIN)
 GOTO RECOVERY
+
 ::
 :: -----------------------------------------------------------------------
 ::
@@ -1498,16 +1364,16 @@ echo       You can view it here: http://tinyw.in/TboltTool
 echo.
 echo       --
 echo.
+echo       Contact eMail: lukeafrazier@gmail.com
 echo       Donation link: http://tinyw.in/TrterDonate
 echo       Twitter: @trter10
-echo       Contact eMail: lukeafrazier@gmail.com
 echo.
 echo       --
 echo.
 echo       See the accompanying README.txt for liscensing information.
 echo.
 echo ----------------------------------------------------------
-echo Press ENTER to return to the main menu...
+echo Press enter to return to the main menu...
 pause >NUL
 color 0b
 GOTO main
@@ -1523,58 +1389,92 @@ echo ------------------------------
 echo       Install Superuser      
 echo ------------------------------
 echo.
+echo Working...
 IF NOT EXIST support_files\download\su.zip (
+cls
+echo ------------------------------
+echo       Install Superuser      
+echo ------------------------------
+echo.
 echo Downloading Superuser files...
 echo Getting su >>%log%
 support_files\wget -O support_files\download\su.zip http://dl.dropbox.com/u/61129367/su.zip >>%log% 2>&1
 title                                            HTC Thunderbolt Tool %verno%
-support_files\md5sums support_files\download\su.zip>support_files\download\su.zip.md5
-set /p SUmd5=<support_files\download\su.zip.md5
-del support_files\download\su.zip.md5
+FOR /F "tokens=1 delims=" %%a in ( 'support_files\md5sums support_files\download\su.zip' ) do ( set SUmd5=%%a )
 echo Our checksum is         %SUmd5% >>%log%
 echo The correct checksum is FC462FA0630379EDBE10006B1D19D9B1  support_files\download\su.zip >>%log%
-IF "%SUmd5%" NEQ "FC462FA0630379EDBE10006B1D19D9B1  support_files\download\su.zip" (
+IF "%SUmd5%" NEQ "FC462FA0630379EDBE10006B1D19D9B1  support_files\download\su.zip " (
 del support_files\download\su.zip
 GOTO SOFFNOROOT2
 )
 )
-:CWMINSTALLSU
+IF NOT EXIST support_files\download\OTABlock.zip (
 cls
 echo ------------------------------
 echo       Install Superuser      
 echo ------------------------------
 echo.
-support_files\wget --quiet -O support_files\download\CWMReg.img.md5 http://dl.dropbox.com/u/61129367/cwmreg.img.md5
-support_files\md5sums support_files\download\CWMReg.img>support_files\download\CWM-here.md5 2>&1
-set /p cwmdl=<support_files\download\CWMReg.img.md5
-set /p cwmhere=<support_files\download\CWM-here.md5
-del support_files\download\CWMReg.img.md5
-del support_files\download\CWM-here.md5
-echo Our checksum is     %cwmhere% >>%log%
-echo Correct checksum is %cwmdl% >>%log%
-echo.
-IF "%cwmdl%" == "%cwmhere%" (GOTO flashcwmSU)
-echo Updating/Getting CWM >>%log%
-echo CWM not found, or there is an update.
-echo Downloading CWM...
-echo.
-IF EXIST support_files\download\CWMReg.img (del support_files\download\CWMReg.img)
-support_files\wget -O support_files\download\CWMReg.img http://dl.dropbox.com/u/61129367/cwmreg.img >>%log% 2>&1
+echo Downloading OTA Block files...
+echo Getting otablock >>%log%
+support_files\wget -O support_files\download\OTABlock.zip http://dl.dropbox.com/u/61129367/OTABlock.zip >>%log% 2>&1
 title                                            HTC Thunderbolt Tool %verno%
-GOTO CWMINSTALLSU
-:flashcwmSU
+)
 cls
 echo ------------------------------
 echo       Install Superuser      
 echo ------------------------------
 echo.
-echo Flashing CWM >>%log%
-echo Flashing CWM... Please wait...
+echo Working...
+IF EXIST support_files\download\extendedcommand-noroot (del support_files\download\extendedcommand-noroot)
+support_files\wget -O support_files\download\extendedcommand-noroot http://dl.dropbox.com/u/61129367/extendedcommand-noroot >>%log% 2>&1
+title                                            HTC Thunderbolt Tool %verno%
+echo Pushing files >>%log%
+support_files\adb push support_files\download\OTABlock.zip /sdcard/ >>%log% 2>&1
+support_files\adb push support_files\download\su.zip /sdcard/ >>%log% 2>&1
+:4extinstallsu
+cls
+echo ------------------------------
+echo       Install Superuser      
+echo ------------------------------
 echo.
+echo Downloading latest 4eXT recovery...
+IF EXIST support_files\download\4ext.zip (del support_files\download\4ext.zip)
+echo Getting 4eXT >>%log%
+support_files\wget -O support_files\download\4ext.zip http://www.4ext.net/ddl/mecha/recovery.zip >>%log% 2>&1
+title                                            HTC Thunderbolt Tool %verno%
+RMDIR "support_files\download\4ext" /S /Q >>%log%
+mkdir support_files\download\4ext\
+support_files\unzip support_files\download\4ext.zip -d support_files\download\4ext\ >>%log%
+FOR /F "tokens=1 delims=" %%a in ( 'support_files\md5sums -n -l support_files\download\4ext\recovery.img' ) do ( set exthere=%%a )
+set /p extdl=<support_files\download\4ext\recovery.md5
+echo Our checksum is     %exthere% >>%log%
+echo Correct checksum is %extdl% >>%log%
+echo.
+IF "%extdl% " NEQ "%exthere%" (GOTO 4extinstallsu)
+:flash4extSU
+cls
+echo ------------------------------
+echo       Install Superuser      
+echo ------------------------------
+echo.
+echo Flashing 4eXT >>%log%
+echo Flashing 4eXT... Please wait...
+echo.
+echo Rebooting to bootloder >>%log%
 support_files\adb reboot-bootloader
-support_files\fastboot flash recovery support_files\download\CWMReg.img >>%log% 2>&1
+echo Flashing recovery img >>%log%
+support_files\fastboot flash recovery support_files\download\4ext\recovery.img >>%log% 2>&1
+echo Rebooting >>%log%
 support_files\fastboot reboot >>%log% 2>&1
+cls
+echo ------------------------------
+echo       Install Superuser      
+echo ------------------------------
+echo.
+echo Please wait...
+echo Waiting for device  >>%log%
 support_files\adb wait-for-device
+echo Rebooting to recovery >>%log%
 support_files\adb reboot recovery
 echo Done flashing >>%log%
 cls
@@ -1584,17 +1484,37 @@ echo ------------------------------
 echo.
 echo If the phone is stuck on the white HTC Screen for 20+ secs, pull the battery,
 echo unplug phone, put battery back in, hold volume down and power until HBOOT 
-echo shows, and select recovery.
+echo shows, and select recovery. Then plug the phone back in.
 echo.
-echo When you get to recovery mode, using the volume buttons to navigate and
-echo power to select, select Install zip from SD, then Choose Zip from SD.
-echo Then, scroll until you see su.zip and select it. Then select yes.
+echo Waiting for recovery...
+:waitforrecosu
+IF EXIST support_files\here (del support_files\here)
+support_files\adb shell echo a>support_files\here 2>&1
+set here=NULL
+set /p here=<support_files\here
+if "%here%" NEQ "a" (GOTO waitforrecosu)
+PING 1.1.1.1 -n 1 -w 4000 >NUL
+cls
+echo ------------------------------
+echo       Install Superuser      
+echo ------------------------------
 echo.
-echo Once it flashes, hit back and then select Reboot system now.
+echo Working...
+echo working >>%log%
+support_files\adb shell mount /cache >>%log% 2>&1
+support_files\adb push support_files\download\extendedcommand-noroot /cache/recovery/extendedcommand >>%log% 2>&1
+support_files\adb reboot recovery
+cls
+echo ------------------------------
+echo       Install Superuser      
+echo ------------------------------
+echo.
+echo When it re-enters recovery, it will 
+echo install superuser.
 echo.
 echo Your phone should reboot and be rooted :)
 echo.
-echo Press ENTER to return to the extras menu...
+echo Press enter to return to the extras menu...
 PAUSE >NUL
 GOTO EXTRAS
 
@@ -1622,6 +1542,6 @@ echo           Driver - %dv% >>%log%
 echo    support_files - %sf% >>%log%
 echo           Readme - %rm% >>%log%
 echo.
-echo Press ENTER to exit...
+echo Press enter to exit...
 pause >NUL
 exit
