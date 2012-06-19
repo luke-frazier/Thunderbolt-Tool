@@ -1,0 +1,64 @@
+---------------------------------------------------
+v0.2b1 - Unreleased
+
+-Made EVERYTHING compatible with recovery mode!!!
+ (This does not include the recovery menu sadly)
+-Made 4eXT the "standard" recovery!!!
+-Redid the entire recovery menu, now has many 
+ functions like backup, restore, and install.
+-Other small tweaks/fixes
+-Detects if su binary is old or non-existent
+-Gets android version for menu
+-Phone not connected and waiting for recovesry 
+ prompts no longer flicker
+-Redid unrooter screen
+-Text edit in rooter
+-Removed exit options from menus, simply hit enter
+ on the main menu to exit
+-Auto detects correct push of Stock RUU in unrooter
+-Main menu now says extras menu rather than extras
+-No "error: device not found" if the phone is not
+ connected on tool startup
+-No "error: device not found" on some "Waiting for
+ recovery"s.
+-The word enter is no longer capatilized.
+
+---------------------------------------------------
+v0.1b4 - 6/13/12 (?)
+
+-Misc fixes
+
+---------------------------------------------------
+v0.1b3 - 6/9/12
+
+-Fixed where the compatibility with recovery mode
+ makes the logs ugly
+-Forwards compatibility using the SED binaries
+-Small text edit in the rooter 
+-Fixed a small logging error
+-Edited OTA.bat (Using SED)
+
+OTA Update @ 10:12 PM EST
+
+-Fixed SED.zip fetch. (Thanks, daz of Thunderbolt
+ Forums!)
+
+OTA Updates from approx. 11 PM - 1:09 AM EST
+
+-Fixed rooter. There should be no other issues with 
+ it.
+
+---------------------------------------------------
+v0.1b2 - 6/9/12
+
+-Now works in recovery mode.
+-Shows bootmode on main menu.
+-Grammatical correction in about.
+-No odd text while flashing CWM and TWRP.
+
+---------------------------------------------------
+v0.1b1 - 6/9/12
+
+-Initial Release.
+
+---------------------------------------------------
