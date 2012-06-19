@@ -108,7 +108,7 @@ title                                            HTC Thunderbolt Tool %verno%
 FOR /F "tokens=1 delims=" %%a in ( 'support_files\md5sums support_files\download\sed.zip' ) do ( set sedmd5=%%a )
 echo Our checksum is         %sedmd5% >>%log%
 echo The correct checksum is 5F4BA3E44B33934E80257F3948970868  support_files\download\sed.zip >>%log%
-IF "%sedmd5%" NEQ "5F4BA3E44B33934E80257F3948970868  support_files\download\sed.zip" (
+IF "%sedmd5%" NEQ "5F4BA3E44B33934E80257F3948970868  support_files\download\sed.zip " (
 del support_files\download\sed.zip
 GOTO REGETSED
 )
