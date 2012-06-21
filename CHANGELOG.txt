@@ -1,5 +1,10 @@
 ---------------------------------------------------
 v0.2b1 - Unreleased
+     __      _.._       
+  .-'__`-._.'.--.'.__.,
+ /--'  '-._.'    '-._./ FRESH HOT BACON IS ALL I SEE
+/__.--._.--._.'``-.__/  
+'._.-'-._.-._.-''-..'    
 
 -Made EVERYTHING compatible with recovery mode!!!
  (This does not include the recovery menu sadly)
@@ -22,6 +27,11 @@ v0.2b1 - Unreleased
 -No "error: device not found" on some "Waiting for
  recovery"s.
 -The word enter is no longer capatilized.
+-Moved unroot down in the menu, why would you want
+ to unroot? :P
+-Gets zip.exe and A .bat that packages the logs in
+ a folder
+-Added stability to make sure files are not corrupt
 
 ---------------------------------------------------
 v0.1b4 - 6/13/12 (?)

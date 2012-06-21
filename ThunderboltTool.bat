@@ -19,6 +19,11 @@ set verno=v0.2b1
 set buildtime=June 14 2012, 12:24 AM EST
 title                                            HTC Thunderbolt Tool %verno%
 color 0b
+IF "%1" == "INFO" (
+echo Verno - %verno% >info.log
+echo Buildtime - %buildtime% >>info.log
+exit
+)
 ::
 ::Setting up logging
 ::Special thanks to Alex K. here http://tinyw.in/nh4r
@@ -115,6 +120,22 @@ GOTO REGETSED
 )
 IF NOT EXIST support_files\sed.exe (support_files\unzip support_files\download\sed.zip -d support_files\ >>%log%)
 cls
+:regetzip
+IF NOT EXIST support_files\zip.exe (
+echo Getting necessary files..
+echo Getting zip >>%log%
+support_files\wget --quiet -O support_files\zip.exe http://dl.dropbox.com/u/61129367/zip.exe
+FOR /F "tokens=1 delims=" %%a in ( 'support_files\md5sums support_files\zip.exe' ) do ( set zipmd5=%%a )
+IF "%zipmd5%" NEQ "83AF340778E7C353B9A2D2A788C3A13A  support_files\zip.exe " (
+del support_files\zip.exe
+goto regetzip
+)
+)
+IF NOT EXIST logs\RUN_ME_FOR_EMAIL.bat (
+echo Getting necessary files..
+echo Getting log .bat >>%log%
+support_files\wget --quiet -O logs\RUN_ME_FOR_EMAIL.bat http://dl.dropbox.com/u/61129367/RUN_ME_FOR_EMAIL.bat
+)
 ::Editing OTA.bat
 support_files\cat support_files/OTA.bat | support_files\sed -e s/"echo There is a new version of this script availible. Downloading now..."/"echo Updating..."/ >support_files\newota.bat
 support_files\cat support_files/newota.bat >support_files\OTA.bat
@@ -123,6 +144,7 @@ del support_files\newota.bat
 IF EXIST support_files\Script-MD5.txt (del support_files\Script-MD5.txt)
 IF EXIST support_files\Script-server-MD5.txt (del support_files\Script-server-MD5.txt)
 :SKIPOTAEDIT
+cls
 echo Starting ADB...
 support_files\adb kill-server
 support_files\adb start-server
@@ -137,7 +159,10 @@ IF EXIST support_files\here (del support_files\here)
 set romver=Unknown
 set bootloader=Unknown
 set adbrt=Unknown
+set andver=Unknown
 set here=NULL
+set su=Unknown
+set sutest=Unknown
 ::Seeing if phone is online
 IF EXIST support_files\here (del support_files\here)
 support_files\adb shell echo a>support_files\here 2>&1
@@ -190,13 +215,38 @@ for /f "tokens=1 delims=" %%a in ( 'support_files\adb shell /system/bin/getprop 
 IF "%adbroot%" == "0 " (set adbrt=Yes) ELSE (set adbrt=No)
 IF "%recovery%" == "yes" (Set adbrt=Yes)
 ::Seeing if su is updated/installed
-set su=yes
-for /f "tokens=1 delims=" %%a in ( 'support_files\adb shell /system/bin/su -v' ) do ( set sutest=%%a )
-IF "%sutest%" NEQ "3.0.3.2 " (set su=old)
-IF "%sutest%" == "/system/bin/sh: su: not found " (set su=no)
+::Our assumptions, may change later in script
+set suhere=1
+set oldsu=- Outdated, please update in app
+::Just in case phone is removed in process we echo out these
+set su1=Unknown
+set suver=Unknown
+::For the real work
+FOR /F "tokens=2 delims=:" %%a in ( 'support_files\adb shell /system/xbin/su -v') do ( set su1=%%a )
+FOR /F "tokens=1 delims=:" %%a in ( 'support_files\adb shell /system/xbin/su -v') do ( set suver=%%a )
+::Seeing if they do have su in the first place
+IF "%su1%" == "/system/bin/sh: su: not found" (
+set suhere=0
+goto skipsu
+)
+IF "%su1%" == " permission denied " (
+set suhere=0
+goto skipsu
+)
+IF "%su1%" == "SUPERSU " (set sukind=SuperSU)
+IF "%su1%" == "Unknown" (set sukind=Superuser)
+::Be sure to replace these with the current version when updated
+IF "%suver%" == "0.91 " (set oldsu=- Up to date)
+IF "%suver%" == "3.0.3.2 " (set oldsu=- Up to date)
+:skipsu
+::In case of any errors
+cls
+::Now to echo the output
+echo.
 echo Bootloader: %bl% %bootloader% >>%log%
 echo ADB rooted: %adbrt% >>%log%
-echo ROM Version: %romver% >>%log%
+echo ROM Version: %romver% - Android %andver% >>%log%
+echo Superuser: %sukind% binary v%suver%%oldsu% >>%log%
 echo -- >>%log%
 :skip
 title                                            HTC Thunderbolt Tool %verno%
@@ -208,9 +258,28 @@ IF "%bl%" == "1.04.0000 " (set rooted=no)
 IF "%bl%" == "1.05.0000 " (set rooted=no)
 ::Determining what menu to show
 IF "%warn%" == "nc" (GOTO nophonemain)
-IF "%sdcard%" == "no" (GOTO nosdcardmain)
 IF "%rooted%" == "no" (GOTO stockmain)
+IF "%suhere%" == "0" (GOTO nosumain)
 IF "%rooted%" == "yes" (GOTO rootmain)
+:errormain
+echo Bootloader info error! >>%log%
+echo                Welcome to the HTC Thunderbolt tool, by trter10.
+echo.
+echo There was an error getting bootloader information.
+echo Please contact me with the logs.
+echo.
+echo Press enter to exit.
+pause >NUL
+GOTO EXIT
+:nosumain
+echo Loading no su main >>%log%
+echo                Welcome to the HTC Thunderbolt tool, by trter10.
+echo.
+echo The SU binary is missing from your phone.
+echo.
+echo Press enter to install it.
+pause >NUL
+GOTO SOFFNOROOT2
 :stockmain
 echo Loading stock main menu >>%log%
 echo -- >>%log%
@@ -249,26 +318,25 @@ set m=NULL
 echo.
 echo Phone information: 
 echo.
-echo   ROM Version: %romver% - Android %andver%
+echo     ROM Version: %romver% - Android %andver%
 IF "%recovery%" == "yes" (echo     Boot mode: Recovery) ELSE (echo     Boot mode: Normal)
-IF "%su%" == "old" (echo     WARNING: SU binary is outdated! Please update it it in the Superuser app.)
-IF "%su%" == "no" (echo     WARNING: SU not found! Please use "S-OFF but no root?" in extras menu.)
+echo     %sukind% binary v%suver%%oldsu%
 echo.
 echo  MAIN MENU
 echo --------------------------------------------------------
-echo       1 - Unroot
-echo       2 - Recovery menu 
-echo       3 - Unbrick menu  ** COMING SOON **
-echo       4 - Boot menu
-echo       5 - Extras menu
+echo       1 - Recovery menu 
+echo       2 - Unbrick menu  ** COMING SOON **
+echo       3 - Boot menu
+echo       4 - Extras menu
+echo       5 - Unroot
 echo       6 - About
 echo --------------------------------------------------------
 set /p m=Choose what you want to do or hit enter to exit. 
-IF %M%==1 (GOTO UNROOT)
-IF %M%==2 (GOTO RECOVERY)
-IF %M%==3 (GOTO UNBRICK)
-IF %M%==4 (GOTO BOOT)
-IF %M%==5 (GOTO EXTRAS)
+IF %M%==1 (GOTO RECOVERY)
+IF %M%==2 (GOTO UNBRICK)
+IF %M%==3 (GOTO BOOT)
+IF %M%==4 (GOTO EXTRAS)
+IF %M%==5 (GOTO UNROOT)
 IF %M%==6 (GOTO ABOUT)
 IF %M%==NULL (
 echo -- >>%log%
@@ -1484,7 +1552,7 @@ echo ------------------------------
 echo.
 echo If the phone is stuck on the white HTC Screen for 20+ secs, pull the battery,
 echo unplug phone, put battery back in, hold volume down and power until HBOOT 
-echo shows, and select recovery. Then plug the phone back in.
+echo shows, wait about 7 seconds, and select recovery. Then plug the phone back in.
 echo.
 echo Waiting for recovery...
 :waitforrecosu
