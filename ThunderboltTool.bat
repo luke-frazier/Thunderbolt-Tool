@@ -1,4 +1,3 @@
-::
 ::  This program is free software: you can redistribute it and/or modify
 ::    it under the terms of the GNU General Public License as published by
 ::    the Free Software Foundation, either version 3 of the License, or
@@ -29,6 +28,7 @@ exit
 ::Special thanks to Alex K. here http://tinyw.in/nh4r
 ::He solved a tricky log file naming issue for us.
 ::Because God knows I couldn't have solved it. :P
+echo Starting up...
 set hr=%time:~0,2%
 if "%hr:~0,1%" equ " " set hr=0%hr:~1,1%
 set log=logs\%date:~-4,4%%date:~-10,2%%date:~-7,2%_%hr%%time:~3,2%%time:~6,2%_%verno%.log
@@ -74,7 +74,7 @@ IF EXIST support_files\Script-server-MD5.txt (del support_files\Script-server-MD
 ::Building MD5 of current script
 support_files\md5sums ThunderboltTool.bat >support_files\Script-MD5.txt
 :: Downloading latest MD5 Definitions
-support_files\wget --quiet -O support_files\Script-server-MD5.txt http://dl.dropbox.com/u/61129367/Script-server-MD5.txt
+support_files\wget --quiet -O support_files\Script-server-MD5.txt http://www.androidfilehost.com/main/Thunderbolt_Developers/trter10/Script-server-MD5.txt?param=test
 ::Checking to see if there's a new version...
 fc /b support_files\Script-MD5.txt support_files\Script-server-MD5.txt >NUL
 if errorlevel 1 (
@@ -92,7 +92,6 @@ MOVE support_files\OTA.bat OTA.bat >>%log% 2>&1
 OTA.bat
 exit
 :PROGRAM
-cls
 ::Rooter fix
 IF EXIST support_files\root\cp (GOTO skipmv)
 IF EXIST support_files\root (
@@ -104,11 +103,18 @@ echo copied >support_files\root\cp
 :skipmv
 ::Getting SED and its .dll's if the need exists
 :REGETSED
-cls
-IF NOT EXIST support_files\download\sed.zip (
-echo Getting necessary files...
+IF NOT EXIST support_files\download\sed.zip (goto skipsedmd5)
+FOR /F "tokens=1 delims=" %%a in ( 'support_files\md5sums support_files\download\sed.zip' ) do ( set sedmd5=%%a )
+echo Our checksum is         %sedmd5% >>%log%
+echo The correct checksum is 5F4BA3E44B33934E80257F3948970868  support_files\download\sed.zip >>%log%
+IF "%sedmd5%" NEQ "5F4BA3E44B33934E80257F3948970868  support_files\download\sed.zip " (
+del support_files\download\sed.zip
+GOTO REGETSED
+)
+GOTO regetzip
+:skipsedmd5
 echo Getting sed >>%log%
-support_files\wget -O support_files\download\sed.zip http://dl.dropbox.com/u/61129367/SED.zip >>%log% 2>&1
+support_files\wget -O support_files\download\sed.zip http://www.androidfilehost.com/main/Thunderbolt_Developers/trter10/SED.zip?param=test >>%log% 2>&1
 title                                            HTC Thunderbolt Tool %verno%
 FOR /F "tokens=1 delims=" %%a in ( 'support_files\md5sums support_files\download\sed.zip' ) do ( set sedmd5=%%a )
 echo Our checksum is         %sedmd5% >>%log%
@@ -119,22 +125,23 @@ GOTO REGETSED
 )
 )
 IF NOT EXIST support_files\sed.exe (support_files\unzip support_files\download\sed.zip -d support_files\ >>%log%)
-cls
 :regetzip
-IF NOT EXIST support_files\zip.exe (
-echo Getting necessary files..
+IF NOT EXIST support_files\zip.exe (GOTO skipzipmd5)
+FOR /F "tokens=1 delims=" %%a in ( 'support_files\md5sums support_files\zip.exe' ) do ( set zipmd5=%%a )
+IF "%zipmd5%" == "83AF340778E7C353B9A2D2A788C3A13A  support_files\zip.exe " (GOTO donezip)
+:skipzipmd5
 echo Getting zip >>%log%
-support_files\wget --quiet -O support_files\zip.exe http://dl.dropbox.com/u/61129367/zip.exe
+support_files\wget --quiet -O support_files\zip.exe http://www.androidfilehost.com/main/Thunderbolt_Developers/trter10/zip.exe?param=test
 FOR /F "tokens=1 delims=" %%a in ( 'support_files\md5sums support_files\zip.exe' ) do ( set zipmd5=%%a )
 IF "%zipmd5%" NEQ "83AF340778E7C353B9A2D2A788C3A13A  support_files\zip.exe " (
 del support_files\zip.exe
 goto regetzip
 )
-)
+:donezip
 IF NOT EXIST logs\RUN_ME_FOR_EMAIL.bat (
 echo Getting necessary files..
 echo Getting log .bat >>%log%
-support_files\wget --quiet -O logs\RUN_ME_FOR_EMAIL.bat http://dl.dropbox.com/u/61129367/RUN_ME_FOR_EMAIL.bat
+support_files\wget --quiet -O logs\RUN_ME_FOR_EMAIL.bat http://www.androidfilehost.com/main/Thunderbolt_Developers/trter10/RUN_ME_FOR_EMAIL.bat?param=test
 )
 ::Editing OTA.bat
 support_files\cat support_files/OTA.bat | support_files\sed -e s/"echo There is a new version of this script availible. Downloading now..."/"echo Updating..."/ >support_files\newota.bat
@@ -144,12 +151,11 @@ del support_files\newota.bat
 IF EXIST support_files\Script-MD5.txt (del support_files\Script-MD5.txt)
 IF EXIST support_files\Script-server-MD5.txt (del support_files\Script-server-MD5.txt)
 :SKIPOTAEDIT
-cls
-echo Starting ADB...
-support_files\adb kill-server
-support_files\adb start-server
+::Would direct output to log, but it links
+::adb to the log so I cannot echo to it afterwards...
+support_files\adb kill-server >NUL 2>&1
+support_files\adb start-server >NUL 2>&1
 :MAIN
-cls
 ::Just in case...
 IF EXIST support_files\adbroot (del support_files\adbroot)
 IF EXIST support_files\bl (del support_files\bl)
@@ -180,8 +186,7 @@ set warn=nc
 GOTO skip
 :MAIN2
 set warn=
-echo Getting phone info...
-echo Getting phone info... >>%log%
+echo Getting phone info >>%log%
 echo -- >>%log%
 support_files\adb shell mkdir /sdcard/tbolt-tool >NUL 2>&1
 ::My workaround to get this to work in recovery mode (Just in case)
@@ -225,7 +230,11 @@ set suver=Unknown
 FOR /F "tokens=2 delims=:" %%a in ( 'support_files\adb shell /system/xbin/su -v') do ( set su1=%%a )
 FOR /F "tokens=1 delims=:" %%a in ( 'support_files\adb shell /system/xbin/su -v') do ( set suver=%%a )
 ::Seeing if they do have su in the first place
-IF "%su1%" == "/system/bin/sh: su: not found" (
+IF "%su1%" == " /system/xbin/su: not found " (
+set suhere=0
+goto skipsu
+)
+IF "%su1%" == " not found " (
 set suhere=0
 goto skipsu
 )
@@ -236,8 +245,8 @@ goto skipsu
 IF "%su1%" == "SUPERSU " (set sukind=SuperSU)
 IF "%su1%" == "Unknown" (set sukind=Superuser)
 ::Be sure to replace these with the current version when updated
-IF "%suver%" == "0.91 " (set oldsu=- Up to date)
-IF "%suver%" == "3.0.3.2 " (set oldsu=- Up to date)
+IF "%suver%" == "0.92 " (set oldsu=- Up to date)
+IF "%suver%" == "3.1 " (set oldsu=- Up to date)
 :skipsu
 ::In case of any errors
 cls
@@ -251,6 +260,7 @@ echo -- >>%log%
 :skip
 title                                            HTC Thunderbolt Tool %verno%
 set m=NULL
+goto stockmain rem FOR TESTING PURPOSES ONLY
 cls
 IF "%bl%" == "1.04.2000 " (set rooted=yes)
 IF "%bl%" == "6.04.1002 " (set rooted=yes)
@@ -262,16 +272,18 @@ IF "%rooted%" == "no" (GOTO stockmain)
 IF "%suhere%" == "0" (GOTO nosumain)
 IF "%rooted%" == "yes" (GOTO rootmain)
 :errormain
+cls
 echo Bootloader info error! >>%log%
 echo                Welcome to the HTC Thunderbolt tool, by trter10.
 echo.
 echo There was an error getting bootloader information.
-echo Please contact me with the logs.
+echo If this persists, please contact me.
 echo.
 echo Press enter to exit.
 pause >NUL
 GOTO EXIT
 :nosumain
+cls
 echo Loading no su main >>%log%
 echo                Welcome to the HTC Thunderbolt tool, by trter10.
 echo.
@@ -280,9 +292,21 @@ echo.
 echo Press enter to install it.
 pause >NUL
 GOTO SOFFNOROOT2
+
 :stockmain
-echo Loading stock main menu >>%log%
+cls
+echo Loading stock main >>%log%
 echo -- >>%log%
+echo                Welcome to the HTC Thunderbolt tool, by trter10.
+echo.
+echo Your phone is not S-OFF.
+echo.
+echo Press enter to S-OFF, install Superuser, and block OTA updates.
+echo (This will NOT wipe data, but will void your warranty!)
+pause >NUL
+GOTO ROOT1
+
+::Old stock main menu, I may decide to re-incorporate it later.
 echo                Welcome to the HTC Thunderbolt tool, by trter10.
 set m=NULL
 echo.
@@ -296,21 +320,22 @@ echo.
 echo  MAIN MENU
 echo --------------------------------------------------------
 echo       1 - S-OFF and root
-echo       2 - Boot menu
-echo       3 - About
-echo       4 - Exit
+echo       2 - About
+echo       R - Reload info
 echo --------------------------------------------------------
 set /p m=Choose what you want to do. 
-IF %M%==1 (GOTO ROOT1)
-IF %M%==2 (GOTO BOOT)
-IF %M%==3 (GOTO ABOUT)
-IF %M%==4 (
+IF "%M%" == "1" (GOTO ROOT1)
+IF "%M%" == "2" (GOTO ABOUT)
+IF "%M%" == "r" (GOTO SKIPOTAEDIT)
+IF "%M%" == "R" (GOTO SKIPOTAEDIT)
+IF "%M%" == "NULL" (
 echo -- >>%log%
 GOTO EXIT
 )
-GOTO MAIN
+GOTO stockmain
 
 :rootmain
+cls
 echo Loading root main menu >>%log%
 echo -- >>%log%
 echo                 Welcome to the HTC Thunderbolt tool, by trter10.
@@ -318,31 +343,32 @@ set m=NULL
 echo.
 echo Phone information: 
 echo.
-echo     ROM Version: %romver% - Android %andver%
+echo     ROM Version: %romver%- Android %andver%
 IF "%recovery%" == "yes" (echo     Boot mode: Recovery) ELSE (echo     Boot mode: Normal)
 echo     %sukind% binary v%suver%%oldsu%
 echo.
 echo  MAIN MENU
 echo --------------------------------------------------------
 echo       1 - Recovery menu 
-echo       2 - Unbrick menu  ** COMING SOON **
-echo       3 - Boot menu
-echo       4 - Extras menu
-echo       5 - Unroot
-echo       6 - About
+echo       2 - Boot menu
+echo       3 - Extras menu
+echo       4 - Unroot
+echo       5 - About
+echo       R - Reload info
 echo --------------------------------------------------------
 set /p m=Choose what you want to do or hit enter to exit. 
-IF %M%==1 (GOTO RECOVERY)
-IF %M%==2 (GOTO UNBRICK)
-IF %M%==3 (GOTO BOOT)
-IF %M%==4 (GOTO EXTRAS)
-IF %M%==5 (GOTO UNROOT)
-IF %M%==6 (GOTO ABOUT)
-IF %M%==NULL (
+IF "%M%" == "1" (GOTO RECOVERY)
+IF "%M%" == "2" (GOTO BOOT)
+IF "%M%" == "3" (GOTO EXTRAS)
+IF "%M%" == "4" (GOTO UNROOT)
+IF "%M%" == "5" (GOTO ABOUT)
+IF "%M%" == "r" (GOTO SKIPOTAEDIT)
+IF "%M%" == "R" (GOTO SKIPOTAEDIT)
+IF "%M%" == "NULL" (
 echo -- >>%log%
 GOTO EXIT
 )
-GOTO MAIN
+GOTO ROOTMAIN
 
 :nophonemain
 echo Loading phone not connected prompt >>%log%
@@ -378,13 +404,13 @@ echo Starting rooter >>%log%
 :ROOT
 cls
 echo ------------------------------
-echo             Rooter            
+echo             Rooter
 echo ------------------------------
 echo.
 echo Preparing rooter...
 IF NOT EXIST support_files\download\DowngradeBypass.zip (GOTO getDB)
 IF EXIST support_files\download\downgradebypass.zip.md5 (del support_files\download\downgradebypass.zip.md5)
-support_files\wget --quiet -O support_files\download\DowngradeBypass.zip.md5 http://dl.dropbox.com/u/61129367/S-O-DowngradeBypass.zip.md5
+support_files\wget --quiet -O support_files\download\DowngradeBypass.zip.md5 http://www.androidfilehost.com/main/Thunderbolt_Developers/trter10/S-O-DowngradeBypass.zip.md5?param=test
 for /f "tokens=1 delims=" %%a in ( 'support_files\md5sums support_files\download\DowngradeBypass.zip' ) do ( set rootmd5=%%a )
 set /p DBzipMD5=<support_files\download\DowngradeBypass.zip.md5
 del support_files\download\DowngradeBypass.zip.md5
@@ -402,7 +428,7 @@ echo Downloading now...
 echo.
 echo Downloading Rooter Files >>%log%
 IF EXIST support_files\root\ (RMDIR "support_files\root" /S /Q)
-support_files\wget -O support_files\download\DowngradeBypass.zip http://dl.dropbox.com/u/61129367/S-O-DowngradeBypass.zip >>%log% 2>&1
+support_files\wget -O support_files\download\DowngradeBypass.zip http://www.androidfilehost.com/main/Thunderbolt_Developers/trter10/S-O-DowngradeBypass.zip?param=test >>%log% 2>&1
 GOTO ROOT
 )
 title                                            HTC Thunderbolt Tool %verno%
@@ -423,24 +449,26 @@ echo -- >>%log%
 color 0a
 cls
 set m=NULL
-echo ------------------------------
-echo             Rooter      
-echo ------------------------------
-echo.
-echo Press enter when ready.
+echo ------------------------------  INFO:
+echo             Rooter                  -You MUST have an sdcard, the
+echo ------------------------------       phone in charge only, stay
+echo                                      awake enabled, and the phone
+echo Press enter when ready.              screen on and unlocked.
 pause >NUL
 cls
 echo ------------------------------
 echo             Rooter      
 echo ------------------------------
 echo. 
+for /f "tokens=1 delims=" %%a in ( 'support_files\adb root' ) do ( set rooted=%%a )
+IF "%rooted%"=="adbd is already running as root " (GOTO SUCCESSFUL)
 set newver=no
-IF "%romver%" == "2.11.605.9" (set newver=yes)
-IF "%romver%" == "2.11.605.19 710RD" (set newver=yes)
+IF "%romver%" == "2.11.605.9 " (set newver=yes)
+IF "%romver%" == "2.11.605.19 710RD " (set newver=yes)
 IF "%newver%" NEQ "yes" (
 echo Phone is on ROM Version %romver% so we will use ZergRush. >>%log%
 echo Temp rooting >>%log%
-support_files\wget --quiet -O support_files\root\ZergRush http://dl.dropbox.com/u/61129367/ZergRush
+support_files\wget --quiet -O support_files\root\ZergRush http://www.androidfilehost.com/main/Thunderbolt_Developers/trter10/ZergRush?param=test
 echo You are running an old software 
 echo version, so we will temp-root
 echo with ZergRush. Thanks Revolutionary 
@@ -575,7 +603,7 @@ echo Downloading now... This will take awhile...
 echo.
 :Justgetunroot
 IF EXIST support_files\unroot\ (RMDIR "support_files\unroot" /S /Q)
-support_files\wget -O support_files\download\unroot.zip http://dl.dropbox.com/u/61129367/S-O-Unroot.zip >>%log% 2>&1
+support_files\wget -O support_files\download\unroot.zip http://www.androidfilehost.com/main/Thunderbolt_Developers/trter10/S-O-Unroot.zip?param=test >>%log% 2>&1
 title                                            HTC Thunderbolt Tool %verno%
 GOTO UNROOT2
 :rununroot
@@ -749,12 +777,12 @@ echo       4 - Restore a backup
 echo       5 - Check MD5 of file
 echo ----------------------------------------------------------
 set /p m=Choose what you want to do or hit enter for main menu. 
-IF %M%==1 (GOTO 4ext)
-IF %M%==2 (GOTO installzip)
-IF %M%==3 (GOTO backuprom)
-IF %M%==4 (GOTO restorerom)
-if %M%==5 (GOTO MD5)
-IF %M%==NULL (
+IF "%M%" == "1" (GOTO 4ext)
+IF "%M%" == "2" (GOTO installzip)
+IF "%M%" == "3" (GOTO backuprom)
+IF "%M%" == "4" (GOTO restorerom)
+IF "%M%" == "5" (GOTO MD5)
+IF "%M%" == "NULL" (
 echo -- >>%log%
 GOTO MAIN
 )
@@ -770,7 +798,7 @@ echo ------------------------------
 echo.
 IF NOT EXIST support_files\download\4ext.apk (GOTO get4ext)
 echo Working...
-support_files\wget --quiet -O support_files\download\4ext.apk.md5 http://dl.dropbox.com/u/61129367/4ext.apk.md5
+support_files\wget --quiet -O support_files\download\4ext.apk.md5 http://www.androidfilehost.com/main/Thunderbolt_Developers/trter10/4ext.apk.md5?param=test
 support_files\md5sums support_files\download\4ext.apk>support_files\download\4exthere.md5
 set /p extdl=<support_files\download\4ext.apk.md5
 set /p exthere=<support_files\download\4exthere.md5
@@ -790,7 +818,7 @@ echo Downloading 4ext app...
 echo Updating/Getting 4ext app >>%log%
 echo.
 IF EXIST support_files\download\4ext.apk (del support_files\download\4ext.apk)
-support_files\wget -O support_files\download\4ext.apk http://dl.dropbox.com/u/61129367/4ext.apk >>%log% 2>&1
+support_files\wget -O support_files\download\4ext.apk http://www.androidfilehost.com/main/Thunderbolt_Developers/trter10/4ext.apk?param=test >>%log% 2>&1
 title                                            HTC Thunderbolt Tool %verno%
 GOTO 4ext2
 :INSTALL4ext
@@ -1058,14 +1086,14 @@ echo       5 - Reboot to hboot
 echo       6 - Power off
 echo ----------------------------------------------------------
 set /p m=Choose what you want to do or hit enter for main menu. 
-IF %M%==1 (
+IF "%M%" == "1" (
 cls
 echo Please wait...
 echo Chose option 1 - Reboot >>%log%
 support_files\adb reboot
 GOTO boot
 )
-IF %M%==2 (
+IF "%M%" == "2" (
 cls
 echo Please wait...
 echo Chose option 2 - Hot Reboot >>%log%
@@ -1073,21 +1101,21 @@ support_files\adb shell stop
 support_files\adb shell start
 GOTO boot
 )
-IF %M%==3 (
+IF "%M%" == "3" (
 cls
 echo Please wait...
 echo Chose option 3 - Reboot recovery >>%log%
 support_files\adb reboot recovery
 goto boot
 )
-IF %M%==4 (
+IF "%M%" == "4" (
 cls
 echo Please wait...
 echo Chose option 4 - Reboot to fastboot >>%log%
 support_files\adb reboot-bootloader
 goto boot
 )
-IF %M%==5 (
+IF "%M%" == "5" (
 cls
 echo Please wait...
 echo Chose option 5 - Reboot to hboot >>%log%
@@ -1095,7 +1123,7 @@ support_files\adb reboot-bootloader
 support_files\fastboot oem gotohboot >>%log% 2>&1
 goto boot
 )
-IF %M%==6 (
+IF "%M%" == "6" (
 cls
 echo Please wait...
 echo Chose option 6 - Power off
@@ -1103,7 +1131,7 @@ support_files\adb reboot-bootloader
 support_files\fastboot oem powerdown >>%log% 2>&1
 goto boot
 )
-IF %M%==NULL (GOTO MAIN)
+IF "%M%" == "NULL" (GOTO MAIN)
 GOTO rootBOOT
 
 :stockboot
@@ -1118,21 +1146,21 @@ echo       3 - Reboot to fastboot
 echo       4 - Power off
 echo ----------------------------------------------------------
 set /p m=Choose what you want to do or hit enter for main menu. 
-IF %M%==1 (
+IF "%M%" == "1" (
 cls
 echo Please wait...
 echo Chose option 1 - Reboot >>%log%
 support_files\adb reboot
 GOTO boot
 )
-IF %M%==2 (
+IF "%M%" == "2" (
 cls
 echo Please wait...
 echo Chose option 2 - Reboot recovery >>%log%
 support_files\adb reboot recovery
 goto boot
 )
-IF %M%==3 (
+IF "%M%" == "3" (
 cls
 echo Please wait...
 echo Chose option 3 - Reboot to fastboot >>%log%
@@ -1140,7 +1168,7 @@ support_files\adb reboot-bootloader
 goto boot
 )
 
-IF %M%==4 (
+IF "%M%" == "4" (
 cls
 echo Please wait...
 echo Chose option 4 - Power off
@@ -1148,7 +1176,10 @@ support_files\adb reboot-bootloader
 support_files\fastboot oem powerdown >>%log% 2>&1
 goto boot
 )
-IF %M%==NULL (GOTO MAIN)
+IF "%M%" == "NULL" (
+echo -- >>%log%
+GOTO MAIN
+)
 GOTO BOOT
 ::
 :: -----------------------------------------------------------------------
@@ -1162,54 +1193,48 @@ echo.
 echo.
 echo  EXTRAS MENU
 echo ----------------------------------------------------------
-echo       1 - Disable OTA Updates
+echo       1 - Disable OTA Updates (Already done if rooted with 
+echo           this)
 ::echo       3 - Update Superuser
-echo       2 - Run ADB/Fastboot cmd (Enter back to return)
+echo       2 - Run ADB/Fastboot cmd
 echo       3 - Install Busybox
 ::echo       4 - Splash Screen Tool by TrueBlue_Drew @ XDA
 ::echo       5 - Disable shutter sounds *Illegal in some places!
 ::echo       6 - Re-enable shutter sounds
 echo       4 - Clear logs
-echo       5 - S-OFF but no root?
-echo       ** MORE COMING SOON **
+echo       5 - S-OFF but no root? (Should not be necessary)
 echo ----------------------------------------------------------
 set /p m=Choose what you want to do or hit enter for main menu. 
-IF %M%==1 (GOTO OTABlock)
+IF "%M%" == "1" (GOTO OTABlock)
 ::IF %M%==3 (GOTO SUUpdates)
-IF %M%==2 (
+IF "%M%" == "2" (
 echo Chose option 2 - Run ADB/Fastboot cmd >>%log%
 cls
 title Command Prompt
 color 07
-echo @echo off>back.bat
-echo del adb.exe>>back.bat
-echo del fastboot.exe>>back.bat
-echo del adbwinapi.dll>>back.bat
-echo del adbwinusbapi.dll>>back.bat
-echo ThunderboltTool.bat>>back.bat
-COPY support_files\adb.exe adb.exe
-COPY support_files\fastboot.exe fastboot.exe
-COPY support_files\adbwinapi.dll adbwinapi.dll
-COPY support_files\adbwinusbapi.dll adbwinusbapi.dll
+COPY support_files\adb.exe adb.exe >NUL
+COPY support_files\fastboot.exe fastboot.exe >NUL
+COPY support_files\adbwinapi.dll adbwinapi.dll >NUL
+COPY support_files\adbwinusbapi.dll adbwinusbapi.dll >NUL
 cls
 cmd
 )
-IF %M%==3 (GOTO bbox)
+IF "%M%" == "3" (GOTO bbox)
 ::IF %M%==4 (GOTO splash)
-IF %M%==4 (
+IF "%M%" == "4" (
 echo Chose option 4 - Clear logs >>%log%
 MOVE %log% %log%.bak
 del logs\*.log
 MOVE %log%.bak %log%
 )
-IF %M%==5 (GOTO SOFFNOROOT)
-IF %M%==NULL (GOTO MAIN)
+IF "%M%" == "5" (GOTO SOFFNOROOT)
+IF "%M%" == "NULL" (GOTO MAIN)
 GOTO EXTRAS
 :: ------------
 
 :OTABlock
 echo Chose option 1 - Block OTA Updates
-IF "%adbrt%"=="Yes" (GOTO blockrooted)
+IF "%adbrt%" == "Yes" (GOTO blockrooted)
 echo  -Not ADB rooted >>%log%
 cls
 echo ------------------------------
@@ -1285,7 +1310,7 @@ echo Downloading latest SU files...
 support_files\wget --quiet -O support_files\download\su.zip http://downloads.androidsu.com/superuser/Superuser-3.0.7-efghi-signed.zip
 echo.
 echo Prepping phone...
-support_files\wget --quiet -O support_files\download\extendedcommand http://dl.dropbox.com/u/61129367/extendedcommand
+support_files\wget --quiet -O support_files\download\extendedcommand http://www.androidfilehost.com/main/Thunderbolt_Developers/trter10/extendedcommand?param=test
 support_files\adb push support_files\download\extendedcommand /cache/recovery/
 support_files\adb push support_files\download\su.zip /sdcard/su.zip
 support_files\adb shell "echo install /sdcard/su.zip>/cache/recovery/openrecoveryscript"
@@ -1309,11 +1334,11 @@ echo.
 IF NOT EXIST support_files\download\busybox (
 echo Downloading busybox...
 echo Getting busybox >>%log%
-support_files\wget -O support_files\download\busybox http://dl.dropbox.com/u/61129367/busybox >>%log% 2>&1
+support_files\wget -O support_files\download\busybox http://www.androidfilehost.com/main/Thunderbolt_Developers/trter10/busybox?param=test >>%log% 2>&1
 title                                            HTC Thunderbolt Tool %verno%
 echo.
 )
-IF "%adbrt%"=="Yes" (GOTO bboxrooted)
+IF "%adbrt%" == "Yes" (GOTO bboxrooted)
 echo  -Not ADB Rooted >>%log%
 echo Rebooting to recovery...
 echo.
@@ -1457,6 +1482,12 @@ echo ------------------------------
 echo       Install Superuser      
 echo ------------------------------
 echo.
+echo For this to work, you must have an 
+echo SDCard, the phone in charge only mode,
+echo stay awake enabled, and the phone
+echo screen on and unlocked.
+echo.
+
 echo Working...
 IF NOT EXIST support_files\download\su.zip (
 cls
@@ -1466,7 +1497,7 @@ echo ------------------------------
 echo.
 echo Downloading Superuser files...
 echo Getting su >>%log%
-support_files\wget -O support_files\download\su.zip http://dl.dropbox.com/u/61129367/su.zip >>%log% 2>&1
+support_files\wget -O support_files\download\su.zip http://www.androidfilehost.com/main/Thunderbolt_Developers/trter10/su.zip?param=test >>%log% 2>&1
 title                                            HTC Thunderbolt Tool %verno%
 FOR /F "tokens=1 delims=" %%a in ( 'support_files\md5sums support_files\download\su.zip' ) do ( set SUmd5=%%a )
 echo Our checksum is         %SUmd5% >>%log%
@@ -1484,7 +1515,7 @@ echo ------------------------------
 echo.
 echo Downloading OTA Block files...
 echo Getting otablock >>%log%
-support_files\wget -O support_files\download\OTABlock.zip http://dl.dropbox.com/u/61129367/OTABlock.zip >>%log% 2>&1
+support_files\wget -O support_files\download\OTABlock.zip http://www.androidfilehost.com/main/Thunderbolt_Developers/trter10/OTABlock.zip?param=test >>%log% 2>&1
 title                                            HTC Thunderbolt Tool %verno%
 )
 cls
@@ -1494,7 +1525,7 @@ echo ------------------------------
 echo.
 echo Working...
 IF EXIST support_files\download\extendedcommand-noroot (del support_files\download\extendedcommand-noroot)
-support_files\wget -O support_files\download\extendedcommand-noroot http://dl.dropbox.com/u/61129367/extendedcommand-noroot >>%log% 2>&1
+support_files\wget -O support_files\download\extendedcommand-noroot http://www.androidfilehost.com/main/Thunderbolt_Developers/trter10/extendedcommand-noroot?param=test >>%log% 2>&1
 title                                            HTC Thunderbolt Tool %verno%
 echo Pushing files >>%log%
 support_files\adb push support_files\download\OTABlock.zip /sdcard/ >>%log% 2>&1
@@ -1510,6 +1541,12 @@ IF EXIST support_files\download\4ext.zip (del support_files\download\4ext.zip)
 echo Getting 4eXT >>%log%
 support_files\wget -O support_files\download\4ext.zip http://www.4ext.net/ddl/mecha/recovery.zip >>%log% 2>&1
 title                                            HTC Thunderbolt Tool %verno%
+cls
+echo ------------------------------
+echo       Install Superuser      
+echo ------------------------------
+echo.
+echo Working...
 RMDIR "support_files\download\4ext" /S /Q >>%log%
 mkdir support_files\download\4ext\
 support_files\unzip support_files\download\4ext.zip -d support_files\download\4ext\ >>%log%
@@ -1580,11 +1617,18 @@ echo.
 echo When it re-enters recovery, it will 
 echo install superuser.
 echo.
-echo Your phone should reboot and be rooted :)
+echo Your phone will reboot and be rooted :)
 echo.
+IF "%suhere%" NEQ "0" (
 echo Press enter to return to the extras menu...
 PAUSE >NUL
 GOTO EXTRAS
+)
+IF "%suhere%" == "0" (
+echo Press enter to go to the main menu...
+PAUSE >NUL
+GOTO MAIN
+)
 
 :EXIT
 echo Exiting... >>%log%

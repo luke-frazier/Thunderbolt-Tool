@@ -11,27 +11,28 @@ v0.2b1 - Unreleased
 -Made 4eXT the "standard" recovery!!!
 -Redid the entire recovery menu, now has many 
  functions like backup, restore, and install.
--Other small tweaks/fixes
 -Detects if su binary is old or non-existent
 -Gets android version for menu
--Phone not connected and waiting for recovesry 
+-Phone not connected and waiting for recovery 
  prompts no longer flicker
 -Redid unrooter screen
 -Text edit in rooter
 -Removed exit options from menus, simply hit enter
  on the main menu to exit
 -Auto detects correct push of Stock RUU in unrooter
--Main menu now says extras menu rather than extras
 -No "error: device not found" if the phone is not
  connected on tool startup
 -No "error: device not found" on some "Waiting for
  recovery"s.
 -The word enter is no longer capatilized.
--Moved unroot down in the menu, why would you want
- to unroot? :P
 -Gets zip.exe and A .bat that packages the logs in
  a folder
 -Added stability to make sure files are not corrupt
+-Cleaned up the code a lot with FOR /F
+-Many edits to menus
+-A key such as ; or ) input in a menu no longer 
+ crashes the program
+-Startup is cleaner
 
 ---------------------------------------------------
 v0.1b4 - 6/13/12 (?)
