@@ -35,10 +35,15 @@ set log=logs\%date:~-4,4%%date:~-10,2%%date:~-7,2%_%hr%%time:~3,2%%time:~6,2%_%v
 IF NOT EXIST logs (MKDIR logs)
 echo Starting Thunderbolt Tool %verno% build %buildtime% at %date% %time% >%log%
 ::Making sure that we extracted correctly
+IF "%PATH%" NEQ "C:\WINDOWS\SYSTEM32" (
+echo Setting path >>%log%
+set path=C:\WINDOWS\SYSTEM32
+)
 set uze=no
 set sf=here
 set rm=here
 set dv=here
+set modver=
 IF NOT EXIST Driver.exe (
 set dv=missing
 set uze=yes
@@ -163,6 +168,7 @@ IF EXIST support_files\romver (del support_files\romver)
 IF EXIST support_files\here (del support_files\here)
 ::In case of any odd errors
 set romver=Unknown
+set romver1=Unknown
 set bootloader=Unknown
 set adbrt=Unknown
 set andver=Unknown
@@ -180,6 +186,10 @@ if "%here%" == "a" (GOTO MAIN2)
 ::and has not went to :MAIN2, we will set a 
 ::variable that tells the program that the 
 ::phone is not connected.
+support_files\fastboot devices >support_files\fbd 2>&1
+FOR /F "tokens=1 delims= " %%a in ( 'support_files\md5sums support_files\fbd' ) do ( set fbd=%%a )
+del support_files\fbd
+IF "%fbd%" NEQ "D41D8CD98F00B204E9800998ECF8427E " (GOTO FASTBOOTONTOOLBOOT)
 echo Phone not connected! >>%log%
 set warn=nc
 ::Skipping unneccessary commands...
@@ -195,19 +205,37 @@ FOR /F "tokens=1 delims=" %%a in ( 'support_files\adb shell mount system' ) do (
 IF "%bv%" == "Usage: mount [-r] [-w] [-o options] [-t type] device directory " (
 echo Phone is normally booted >>%log%
 set recovery=No
-) ELSE (
+goto normboot
+)
+IF "%bv%" == "mount: can't read '/etc/fstab': No such file or directory " (
+echo Phone is normally booted >>%log%
+set recovery=No
+goto normboot
+)
 echo Phone is in recovery mode >>%log%
 support_files\adb shell mount /sdcard >%log% 2>&1
 support_files\adb shell mount /data >%log% 2>&1
 support_files\adb shell mount /cache >>%log% 2>&1
 set recovery=yes
-)
+
+:normboot
 ::Checking ROM Version
 ::Android ver
 for /f "tokens=2 delims==" %%a in ( 'support_files\adb shell cat /system/build.prop ^| find "ro.build.version.release"' ) do ( set andver=%%a )
 ::Workaround for recovery mode so that we can still get romver
-for /f "tokens=2 delims==" %%a in ( 'support_files\adb shell cat /system/build.prop ^| find "ro.product.version"' ) do ( set romver=%%a )
-IF "%romver%" == "Unknown" (for /f "tokens=2 delims==" %%a in ( 'support_files\adb shell cat /system/build.prop ^| find "ro.build.display.id"' ) do ( set romver=%%a ))
+::
+::Now looing back on this code (It is now 8/4/2012) I have no idea how this adds recovery compatibility.
+::But I'm not gonna screw with it.
+::
+for /f "tokens=2 delims==" %%a in ( 'support_files\adb shell cat /system/build.prop ^| find "ro.product.version"' ) do ( set romver1=%%a )
+IF "%romver1%" == "Unknown" (for /f "tokens=2 delims==" %%a in ( 'support_files\adb shell cat /system/build.prop ^| find "ro.build.display.id"' ) do ( set romver1=%%a ))
+::In case of CM7
+IF "%romver1%" == "GRJ22 " (
+set romver2=CM7
+for /f "tokens=2 delims==" %%a in ( 'support_files\adb shell cat /system/build.prop ^| find "ro.modversion"' ) do ( set modver=%%a )
+)
+IF "%romver2%" == "CM7" (set romver1=CyanogenMod 7 -)
+set romver=%romver1% %modver%
 ::Checking bootloader
 for /f "tokens=1 delims=" %%a in ( 'support_files\adb shell /system/bin/getprop ro.bootloader' ) do ( set bl=%%a )
 IF "%bl%" == "6.04.1002 " (set bootloader=Revolutionary S-OFF)
@@ -246,7 +274,7 @@ IF "%su1%" == "SUPERSU " (set sukind=SuperSU)
 IF "%su1%" == "Unknown" (set sukind=Superuser)
 ::Be sure to replace these with the current version when updated
 IF "%suver%" == "0.92 " (set oldsu=- Up to date)
-IF "%suver%" == "3.1 " (set oldsu=- Up to date)
+IF "%suver%" == "3.1.1 " (set oldsu=- Up to date)
 :skipsu
 ::In case of any errors
 cls
@@ -260,7 +288,6 @@ echo -- >>%log%
 :skip
 title                                            HTC Thunderbolt Tool %verno%
 set m=NULL
-goto stockmain rem FOR TESTING PURPOSES ONLY
 cls
 IF "%bl%" == "1.04.2000 " (set rooted=yes)
 IF "%bl%" == "6.04.1002 " (set rooted=yes)
@@ -292,6 +319,38 @@ echo.
 echo Press enter to install it.
 pause >NUL
 GOTO SOFFNOROOT2
+
+:FASTBOOTONTOOLBOOT
+cls
+echo Device in fastboot >>%log%
+support_files\fastboot getvar version-baseband >support_files\bb 2>&1
+set /p baseband1=<support_files\bb
+del support_files\bb
+FOR /F "tokens=2 delims=:" %%a in ( 'echo %baseband1%' ) do ( set baseband=%%a )
+support_files\fastboot getvar security >support_files\sec 2>&1
+set /p security1=<support_files\sec
+del support_files\sec
+FOR /F "tokens=2 delims= " %%a in ( 'echo %security1%' ) do ( set security=%%a )
+support_files\fastboot getvar version-bootloader >support_files\bl 2>&1
+set /p hbootver1=<support_files\bl
+del support_files\bl
+FOR /F "tokens=2 delims= " %%a in ( 'echo %hbootver1%' ) do ( set hbootver=%%a )
+echo                Welcome to the HTC Thunderbolt tool, by trter10.
+echo.
+echo WARNING! Device detected in fastboot mode. Please select "REBOOT" on the phone  to begin using the tool.
+echo.
+echo ----
+echo  *S-%security%
+echo.
+echo  *Hboot %hbootver%
+echo.
+echo  *Radio%baseband%
+echo ----
+echo.
+echo Press any key to begin searching for device...
+pause >NUL
+cls
+GOTO nophonemain
 
 :stockmain
 cls
@@ -386,9 +445,8 @@ echo.
 :nophonemain2
 ::I can't use a FOR /F here, because if I do it prints "error: device not found" repeatedly
 ::So we will do it manually
-IF EXIST support_files\here (del support_files\here)
-support_files\adb shell echo a>support_files\here 2>&1
 set here=NULL
+support_files\adb shell echo a>support_files\here 2>&1
 set /p here=<support_files\here
 del support_files\here
 if "%here%" NEQ "a" (
@@ -514,14 +572,14 @@ color 0c
 echo Success!
 echo.
 echo Just in case of PG05IMG >>%log%
-support_files\adb shell rm /sdcard/PG05IMG.zip >>%log% 2>&1 >support_files\sn
+support_files\adb shell rm /sdcard/PG05IMG.zip >>%log% 2>&1
 echo Restarting adb...
 support_files\adb kill-server >NUL 2>&1
 support_files\adb start-server >NUL 2>&1
 echo.
 for /f "tokens=1 delims=" %%a in ( 'support_files\adb shell getprop ro.serialno' ) do ( set serialno=%%a )
 echo X = MsgBox("On the revolutionary website, please scroll down to Download for Windows. Click that button, then cancel the download. Enter your phone's information in the prompts that pop up. The info you need is: Seiral Number: %serialno% Hboot version: %hbootver%. Once you do that, copy your beta key from the website, then paste it into the Revolutionary window. To paste it, right click the title bar of the Revolutionary window then click edit then click paste. If there are two revolutionary windows, you can close one. Please note that for Revolutionary to work you need to uninstall Droid Explorer if you have it. Thanks!",0+64+4096, "PLEASE READ - Message from trter10")>support_files\root\rev.vbs
-echo X = MsgBox("Please note that you need to enter Y to download and flash CWM recovery at the end of Revolutionary. After Revolutionary completes, using the volume buttons to navigate and power to select, you will need to exit fastboot by selecting bootloader, waiting a few seconds, then selecting recovery. Then, CWM will automatically install superuser and reboot.",0+64+4096, "PLEASE READ - Message from trter10")>>support_files\root\rev.vbs
+echo X = MsgBox("Please note that you need to enter Y to download and flash CWM recovery at the end of Revolutionary (If it sticks at waiting for fastboot or rebooting to fastboot once moar make sure you have ran the driver and try unplugging and replugging in the phone.) After Revolutionary completes and CWM is flashed, using the volume buttons to navigate and power to select, you will need to exit fastboot by selecting bootloader, waiting a few seconds, then selecting recovery. Then, CWM will automatically install superuser and reboot.",0+64+4096, "PLEASE READ - Message from trter10")>>support_files\root\rev.vbs
 :su-no-ota
 echo Putting files on phone >>%log%
 echo Putting files on your phone...
@@ -771,17 +829,16 @@ echo.
 echo  RECOVERY MENU
 echo ----------------------------------------------------------
 echo       1 - Install/run Recovery Updater (Flash 4eXT in app)
-echo       2 - Install zip
-echo       3 - Backup ROM
-echo       4 - Restore a backup
-echo       5 - Check MD5 of file
+echo.
+echo  *Coming soon: Install zip, Backup, and Restore (Not 
+echo   currently implemented due to technical difficulties)
 echo ----------------------------------------------------------
 set /p m=Choose what you want to do or hit enter for main menu. 
 IF "%M%" == "1" (GOTO 4ext)
-IF "%M%" == "2" (GOTO installzip)
-IF "%M%" == "3" (GOTO backuprom)
-IF "%M%" == "4" (GOTO restorerom)
-IF "%M%" == "5" (GOTO MD5)
+::IF "%M%" == "2" (GOTO installzip)
+::IF "%M%" == "3" (GOTO backuprom)
+::IF "%M%" == "4" (GOTO restorerom)
+::IF "%M%" == "5" (GOTO MD5)
 IF "%M%" == "NULL" (
 echo -- >>%log%
 GOTO MAIN
@@ -1201,8 +1258,8 @@ echo       3 - Install Busybox
 ::echo       4 - Splash Screen Tool by TrueBlue_Drew @ XDA
 ::echo       5 - Disable shutter sounds *Illegal in some places!
 ::echo       6 - Re-enable shutter sounds
-echo       4 - Clear logs
-echo       5 - S-OFF but no root? (Should not be necessary)
+echo       4 - S-OFF but no root? (Should not be necessary)
+echo       5 - Reset Thunderbolt Tool
 echo ----------------------------------------------------------
 set /p m=Choose what you want to do or hit enter for main menu. 
 IF "%M%" == "1" (GOTO OTABlock)
@@ -1221,13 +1278,8 @@ cmd
 )
 IF "%M%" == "3" (GOTO bbox)
 ::IF %M%==4 (GOTO splash)
-IF "%M%" == "4" (
-echo Chose option 4 - Clear logs >>%log%
-MOVE %log% %log%.bak
-del logs\*.log
-MOVE %log%.bak %log%
-)
-IF "%M%" == "5" (GOTO SOFFNOROOT)
+IF "%M%" == "4" (GOTO SOFFNOROOT)
+IF "%M%" == "5" (GOTO CLEARPROG)
 IF "%M%" == "NULL" (GOTO MAIN)
 GOTO EXTRAS
 :: ------------
@@ -1340,6 +1392,11 @@ echo.
 )
 IF "%adbrt%" == "Yes" (GOTO bboxrooted)
 echo  -Not ADB Rooted >>%log%
+cls
+echo ------------------------------
+echo        Busybox installer
+echo ------------------------------
+echo.
 echo Rebooting to recovery...
 echo.
 support_files\adb reboot recovery
@@ -1364,15 +1421,18 @@ echo ------------------------------
 echo.
 echo Working...
 echo Working >>%log%
+@echo on
 support_files\adb shell mount /system
 support_files\adb shell rm -r /system/xbin/busybox >>%log% 2>&1
 support_files\adb push support_files\download\busybox /system/xbin/ >>%log% 2>&1
 support_files\adb shell chown root.shell /system/xbin/busybox
 support_files\adb shell chmod 04755 /system/xbin/busybox
-support_files\adb shell ./system/xbin/busybox --install -s /system/xbin
+support_files\adb shell "/system/xbin/busybox --install -s /system/xbin"
 support_files\adb reboot
 support_files\adb kill-server >NUL 2>&1
 support_files\adb start-server >NUL 2>&1
+@echo off
+pause
 cls
 echo ------------------------------
 echo        Busybox installer
@@ -1438,6 +1498,53 @@ IF %menu%==7 (goto thank)
 IF %M%==NULL (GOTO MAIN)
 GOTO RECOVERY
 
+:CLEARPROG
+echo Chose option 5 - Reset tool >>%log%
+:CLEARPROG2
+color 0c
+set M=NULL
+cls
+echo ------------------------------
+echo     Reset Thunderbolt Tool
+echo ------------------------------
+echo.
+echo WARNING! This will delete all downloaded
+echo files and will clear all logs. Only use
+echo if you want to return the tool to how it
+echo was when you first ran it. 
+echo.
+set /p M=Press 1 to continue or enter to return. 
+color 0b
+IF "%M%" == "1" (goto wipeprog)
+IF "%M%" == "NULL" (goto extras)
+GOTO CLEARPROG2
+
+:wipeprog
+cls
+echo ------------------------------
+echo     Reset Thunderbolt Tool
+echo ------------------------------
+echo.
+echo Resetting >>%log%
+echo Resetting...
+echo.
+MOVE %log% %log%.bak
+del logs\*.log
+MOVE %log%.bak %log%
+RMDIR "support_files\download" /S /Q >>%log%
+RMDIR "support_files\root" /S /Q >>%log%
+RMDIR "support_files\unroot" /S /Q >>%log%
+del support_files\RAN >>%log%
+del support_files\RAN1 >>%log%
+cls
+echo ------------------------------
+echo     Reset Thunderbolt Tool
+echo ------------------------------
+echo.
+echo Done! Tool is restarting.
+PING 1.1.1.1 -n 1 -w 4000 >NUL
+cls
+ThunderboltTool.bat
 ::
 :: -----------------------------------------------------------------------
 ::
@@ -1547,7 +1654,7 @@ echo       Install Superuser
 echo ------------------------------
 echo.
 echo Working...
-RMDIR "support_files\download\4ext" /S /Q >>%log%
+IF EXIST support_files\download\4ext (RMDIR "support_files\download\4ext" /S /Q)
 mkdir support_files\download\4ext\
 support_files\unzip support_files\download\4ext.zip -d support_files\download\4ext\ >>%log%
 FOR /F "tokens=1 delims=" %%a in ( 'support_files\md5sums -n -l support_files\download\4ext\recovery.img' ) do ( set exthere=%%a )
@@ -1615,9 +1722,13 @@ echo       Install Superuser
 echo ------------------------------
 echo.
 echo When it re-enters recovery, it will 
-echo install superuser.
+echo install superuser and block OTAs.
 echo.
 echo Your phone will reboot and be rooted :)
+echo.
+echo Once the phone is booted, please choose 
+echo option 1 in the recovery menu. Then
+echo configure 4eXT in the app.
 echo.
 IF "%suhere%" NEQ "0" (
 echo Press enter to return to the extras menu...
@@ -1629,13 +1740,6 @@ echo Press enter to go to the main menu...
 PAUSE >NUL
 GOTO MAIN
 )
-
-:EXIT
-echo Exiting... >>%log%
-IF EXIST support_files\Script-new-MD5.txt (del support_files\Script-new-MD5.txt)
-support_files\adb kill-server
-ENDLOCAL
-exit
 
 :UNZIP-ERR
 echo Extraction error! >>%log%
@@ -1656,4 +1760,9 @@ echo           Readme - %rm% >>%log%
 echo.
 echo Press enter to exit...
 pause >NUL
-exit
+
+:EXIT
+echo Exiting... >>%log%
+IF EXIST support_files\Script-new-MD5.txt (del support_files\Script-new-MD5.txt)
+support_files\adb kill-server
+ENDLOCAL
