@@ -14,8 +14,8 @@
 ::
 @echo off
 SETLOCAL
-set verno=v0.2b1
-set buildtime=June 14 2012, 12:24 AM EST
+set verno=v1.0.0
+set buildtime=September 22 2012, 3:55 PM EST
 title                                            HTC Thunderbolt Tool %verno%
 color 0b
 IF "%1" == "INFO" (
@@ -273,8 +273,8 @@ goto skipsu
 IF "%su1%" == "SUPERSU " (set sukind=SuperSU)
 IF "%su1%" == "Unknown" (set sukind=Superuser)
 ::Be sure to replace these with the current version when updated
-IF "%suver%" == "0.92 " (set oldsu=- Up to date)
-IF "%suver%" == "3.1.1 " (set oldsu=- Up to date)
+IF "%suver%" GEQ "0.96 " (set oldsu=- Up to date)
+IF "%suver%" GEQ "3.1.1 " (set oldsu=- Up to date)
 :skipsu
 ::In case of any errors
 cls
@@ -335,22 +335,77 @@ support_files\fastboot getvar version-bootloader >support_files\bl 2>&1
 set /p hbootver1=<support_files\bl
 del support_files\bl
 FOR /F "tokens=2 delims= " %%a in ( 'echo %hbootver1%' ) do ( set hbootver=%%a )
-echo                Welcome to the HTC Thunderbolt tool, by trter10.
-echo.
-echo WARNING! Device detected in fastboot mode. Please select "REBOOT" on the phone  to begin using the tool.
-echo.
-echo ----
-echo  *S-%security%
-echo.
-echo  *Hboot %hbootver%
-echo.
-echo  *Radio%baseband%
-echo ----
-echo.
-echo Press any key to begin searching for device...
-pause >NUL
+:fbsoff
 cls
-GOTO nophonemain
+echo Loading fastboot menu for s-off>>%log%
+echo -- >>%log%
+echo                 Welcome to the HTC Thunderbolt tool, by trter10.
+set m=NULL
+echo.
+echo Phone information: 
+echo.
+echo  You are S-%security%
+echo  Hboot: %hbootver%
+echo  Radio:%baseband%
+echo.
+echo  FASTBOOT MENU
+echo --------------------------------------------------------
+echo       1 - Boot menu
+echo       2 - About
+echo       R - Reload info
+echo       * Security warning fix coming soon!
+echo --------------------------------------------------------
+set /p m=Choose what you want to do or hit enter to exit. 
+IF "%M%" == "1" (GOTO SECWAR)
+IF "%M%" == "2" (GOTO FBBOOT)
+IF "%M%" == "3" (GOTO ABOUT)
+IF "%M%" == "r" (GOTO SKIPOTAEDIT)
+IF "%M%" == "R" (GOTO SKIPOTAEDIT)
+IF "%M%" == "NULL" (
+echo -- >>%log%
+GOTO EXIT
+)
+GOTO fbsoff
+
+:fbson
+cls
+echo Loading fastboot menu for s-on>>%log%
+echo -- >>%log%
+echo                 Welcome to the HTC Thunderbolt tool, by trter10.
+set m=NULL
+echo.
+echo Phone information: 
+echo.
+echo  S-%security%
+echo  Hboot %hbootver%
+echo  Radio%baseband%
+echo.
+echo  FASTBOOT MENU
+echo --------------------------------------------------------
+echo       1 - Recovery menu 
+echo       2 - Boot menu
+echo       3 - Extras menu
+echo       4 - Unroot
+echo       5 - About
+echo       R - Reload info
+echo --------------------------------------------------------
+set /p m=Choose what you want to do or hit enter to exit. 
+IF "%M%" == "1" (GOTO RECOVERY)
+IF "%M%" == "2" (GOTO BOOT)
+IF "%M%" == "3" (GOTO EXTRAS)
+IF "%M%" == "4" (GOTO UNROOT)
+IF "%M%" == "5" (GOTO ABOUT)
+IF "%M%" == "r" (GOTO SKIPOTAEDIT)
+IF "%M%" == "R" (GOTO SKIPOTAEDIT)
+IF "%M%" == "NULL" (
+echo -- >>%log%
+GOTO EXIT
+)
+GOTO fbsoff
+
+:SECWAR
+
+:FBBOOT
 
 :stockmain
 cls
@@ -404,7 +459,8 @@ echo Phone information:
 echo.
 echo     ROM Version: %romver%- Android %andver%
 IF "%recovery%" == "yes" (echo     Boot mode: Recovery) ELSE (echo     Boot mode: Normal)
-echo     %sukind% binary v%suver%%oldsu%
+echo     %sukind% binary v%suver% 
+:: %oldsu% BETA~~
 echo.
 echo  MAIN MENU
 echo --------------------------------------------------------
@@ -508,10 +564,10 @@ color 0a
 cls
 set m=NULL
 echo ------------------------------  INFO:
-echo             Rooter                  -You MUST have an sdcard, the
-echo ------------------------------       phone in charge only, stay
-echo                                      awake enabled, and the phone
-echo Press enter when ready.              screen on and unlocked.
+echo             Rooter                  -For this to work, you must have an 
+echo ------------------------------       SDCard, the phone in charge only mode,
+echo                                      stay awake enabled, and the phone
+echo Press enter when ready.              screen on and unlocked the entire time.
 pause >NUL
 cls
 echo ------------------------------
@@ -523,13 +579,14 @@ IF "%rooted%"=="adbd is already running as root " (GOTO SUCCESSFUL)
 set newver=no
 IF "%romver%" == "2.11.605.9 " (set newver=yes)
 IF "%romver%" == "2.11.605.19 710RD " (set newver=yes)
+IF "%romver%" == "2.11.605.9  " (set newver=yes)
+IF "%romver%" == "2.11.605.19 710RD  " (set newver=yes)
 IF "%newver%" NEQ "yes" (
-echo Phone is on ROM Version %romver% so we will use ZergRush. >>%log%
+echo Phone is on ROM Version "%romver%"so we will use ZergRush. >>%log%
 echo Temp rooting >>%log%
 support_files\wget --quiet -O support_files\root\ZergRush http://www.androidfilehost.com/main/Thunderbolt_Developers/trter10/ZergRush?param=test
-echo You are running an old software 
-echo version, so we will temp-root
-echo with ZergRush. Thanks Revolutionary 
+echo Preparing for S-OFF with
+echo ZergRush. Thanks Revolutionary
 echo team!
 support_files\adb push support_files\root\ZergRush /data/local/ >>%log% 2>&1
 support_files\adb shell chmod 777 /data/local/ZergRush
@@ -539,10 +596,10 @@ support_files\adb kill-server >NUL 2>&1
 support_files\adb start-server >NUL 2>&1
 GOTO SKIPFRE3VO
 )
-echo Temp-rooting with fre3vo, thanks TeamWin!
-echo You will see some static across the top
-echo of your phone screen. This is normal.
-echo Phone is on ROM Version %romver% so we will use fre3vo. >>%log%
+echo Preparing for S-OFF with fre3vo, thanks
+echo TeamWin! You will see some static across
+echo the top of your phone screen.
+echo Phone is on ROM Version "%romver%" so we will use fre3vo. >>%log%
 echo Temp rooting >>%log%
 support_files\adb push support_files\root\fre3vo /data/local/fre3vo >>%log% 2>&1
 support_files\adb shell chmod 777 /data/local/fre3vo
@@ -550,12 +607,6 @@ support_files\adb shell /data/local/fre3vo -debug -start F0000000 -end FFFFFFFF 
 support_files\adb wait-for-device
 support_files\adb shell rm /data/local/fre3vo
 :SKIPFRE3VO
-cls
-echo ------------------------------
-echo             Rooter            
-echo ------------------------------
-echo.
-echo Working...
 support_files\adb kill-server >NUL 2>&1
 support_files\adb start-server >NUL 2>&1
 ::Ensuring root was successful...
@@ -569,20 +620,18 @@ echo ------------------------------
 echo.
 echo Root successful >>%log%
 color 0c
-echo Success!
+echo Success! Finishing preparations...
 echo.
 echo Just in case of PG05IMG >>%log%
 support_files\adb shell rm /sdcard/PG05IMG.zip >>%log% 2>&1
-echo Restarting adb...
 support_files\adb kill-server >NUL 2>&1
 support_files\adb start-server >NUL 2>&1
 echo.
 for /f "tokens=1 delims=" %%a in ( 'support_files\adb shell getprop ro.serialno' ) do ( set serialno=%%a )
-echo X = MsgBox("On the revolutionary website, please scroll down to Download for Windows. Click that button, then cancel the download. Enter your phone's information in the prompts that pop up. The info you need is: Seiral Number: %serialno% Hboot version: %hbootver%. Once you do that, copy your beta key from the website, then paste it into the Revolutionary window. To paste it, right click the title bar of the Revolutionary window then click edit then click paste. If there are two revolutionary windows, you can close one. Please note that for Revolutionary to work you need to uninstall Droid Explorer if you have it. Thanks!",0+64+4096, "PLEASE READ - Message from trter10")>support_files\root\rev.vbs
+echo X = MsgBox("On the revolutionary website, please scroll down to Download for Windows. Click that button, then cancel the download. Enter your phone's information in the prompts that pop up. The info you need is: Seiral Number: %serialno% Hboot version: %bl% Once you do that, copy your beta key from the website, then paste it into the Revolutionary window. To paste it, right click the title bar of the Revolutionary window then click edit then click paste. If there are two revolutionary windows, you can close one. Please note that for Revolutionary to work you need to uninstall Droid Explorer if you have it. Thanks!",0+64+4096, "PLEASE READ - Message from trter10")>support_files\root\rev.vbs
 echo X = MsgBox("Please note that you need to enter Y to download and flash CWM recovery at the end of Revolutionary (If it sticks at waiting for fastboot or rebooting to fastboot once moar make sure you have ran the driver and try unplugging and replugging in the phone.) After Revolutionary completes and CWM is flashed, using the volume buttons to navigate and power to select, you will need to exit fastboot by selecting bootloader, waiting a few seconds, then selecting recovery. Then, CWM will automatically install superuser and reboot.",0+64+4096, "PLEASE READ - Message from trter10")>>support_files\root\rev.vbs
 :su-no-ota
 echo Putting files on phone >>%log%
-echo Putting files on your phone...
 echo.
 support_files\adb wait-for-device
 echo  -SU >>%log%
@@ -591,9 +640,8 @@ echo  -OTABlock >>%log%
 support_files\adb push support_files\root\OTABlock.zip /sdcard/OTABlock.zip >>%log% 2>&1
 echo  -Extendedcommand >>%log%
 support_files\adb push support_files\root\extendedcommand /cache/recovery/extendedcommand >>%log% 2>&1
-echo Starting Revolutionary and the Website....
 echo Starting Revolutionary and the Website >>%log%
-START iexplore.exe Revolutionary.io
+START /MAX http://www.Revolutionary.io
 START support_files\root\Revolutionary.exe
 START support_files\root\Revolutionary.exe
 START support_files\root\rev.vbs
@@ -1125,9 +1173,9 @@ echo --------------------------------------------------------
 :: -----------------------------------------------------------------------
 ::
 :BOOT
+cls
 set m=NULL
 echo Loading boot menu >>%log%
-cls
 IF "%rooted%" NEQ "yes" (GOTO stockBOOT)
 :rootBOOT
 echo  -Rooted >>%log%
@@ -1189,7 +1237,7 @@ support_files\fastboot oem powerdown >>%log% 2>&1
 goto boot
 )
 IF "%M%" == "NULL" (GOTO MAIN)
-GOTO rootBOOT
+GOTO boot
 
 :stockboot
 echo  -Stock >>%log%
@@ -1554,9 +1602,9 @@ cls
 color 0c
 echo.
 echo.
-echo              HTC Thunderbolt Tool %verno% - %buildtime%
+echo  HTC Thunderbolt Tool %verno% - %buildtime%
 echo.
-echo                              Created by trter10
+echo  Created by trter10
 echo.
 echo.
 echo       All of this application's source code is public.
@@ -1585,65 +1633,33 @@ GOTO main
 echo Chose option 6 - S-OFF but no root >>%log%
 :SOFFNOROOT2
 cls
-echo ------------------------------
-echo       Install Superuser      
-echo ------------------------------
-echo.
-echo For this to work, you must have an 
-echo SDCard, the phone in charge only mode,
-echo stay awake enabled, and the phone
-echo screen on and unlocked.
-echo.
-
-echo Working...
-IF NOT EXIST support_files\download\su.zip (
+echo ------------------------------  INFO:
+echo       Install Superuser             -For this to work, you must have an 
+echo ------------------------------       SDCard, the phone in charge only mode,
+echo                                      stay awake enabled, and the phone
+echo Press enter when ready.              screen on and unlocked the entire time.
+pause >NUL
 cls
 echo ------------------------------
 echo       Install Superuser      
 echo ------------------------------
 echo.
-echo Downloading Superuser files...
+echo Downloading files...
 echo Getting su >>%log%
+IF EXIST support_files\download\su.zip (del support_files\download\su.zip)
 support_files\wget -O support_files\download\su.zip http://www.androidfilehost.com/main/Thunderbolt_Developers/trter10/su.zip?param=test >>%log% 2>&1
 title                                            HTC Thunderbolt Tool %verno%
-FOR /F "tokens=1 delims=" %%a in ( 'support_files\md5sums support_files\download\su.zip' ) do ( set SUmd5=%%a )
-echo Our checksum is         %SUmd5% >>%log%
-echo The correct checksum is FC462FA0630379EDBE10006B1D19D9B1  support_files\download\su.zip >>%log%
-IF "%SUmd5%" NEQ "FC462FA0630379EDBE10006B1D19D9B1  support_files\download\su.zip " (
-del support_files\download\su.zip
-GOTO SOFFNOROOT2
-)
-)
 IF NOT EXIST support_files\download\OTABlock.zip (
-cls
-echo ------------------------------
-echo       Install Superuser      
-echo ------------------------------
-echo.
-echo Downloading OTA Block files...
 echo Getting otablock >>%log%
 support_files\wget -O support_files\download\OTABlock.zip http://www.androidfilehost.com/main/Thunderbolt_Developers/trter10/OTABlock.zip?param=test >>%log% 2>&1
 title                                            HTC Thunderbolt Tool %verno%
 )
-cls
-echo ------------------------------
-echo       Install Superuser      
-echo ------------------------------
-echo.
-echo Working...
 IF EXIST support_files\download\extendedcommand-noroot (del support_files\download\extendedcommand-noroot)
+echo Getting EC >>%log%
 support_files\wget -O support_files\download\extendedcommand-noroot http://www.androidfilehost.com/main/Thunderbolt_Developers/trter10/extendedcommand-noroot?param=test >>%log% 2>&1
 title                                            HTC Thunderbolt Tool %verno%
-echo Pushing files >>%log%
-support_files\adb push support_files\download\OTABlock.zip /sdcard/ >>%log% 2>&1
-support_files\adb push support_files\download\su.zip /sdcard/ >>%log% 2>&1
+
 :4extinstallsu
-cls
-echo ------------------------------
-echo       Install Superuser      
-echo ------------------------------
-echo.
-echo Downloading latest 4eXT recovery...
 IF EXIST support_files\download\4ext.zip (del support_files\download\4ext.zip)
 echo Getting 4eXT >>%log%
 support_files\wget -O support_files\download\4ext.zip http://www.4ext.net/ddl/mecha/recovery.zip >>%log% 2>&1
@@ -1653,7 +1669,14 @@ echo ------------------------------
 echo       Install Superuser      
 echo ------------------------------
 echo.
-echo Working...
+echo Processing files...
+FOR /F "tokens=1 delims=" %%a in ( 'support_files\md5sums support_files\download\su.zip' ) do ( set SUmd5=%%a )
+echo Our checksum is         %SUmd5% >>%log%
+echo The correct checksum is B3C89F46F014C9DF7D23B94D37386B8A  support_files\download\su.zip >>%log%
+IF "%SUmd5%" NEQ "B3C89F46F014C9DF7D23B94D37386B8A  support_files\download\su.zip " (
+del support_files\download\su.zip
+GOTO SOFFNOROOT2
+)
 IF EXIST support_files\download\4ext (RMDIR "support_files\download\4ext" /S /Q)
 mkdir support_files\download\4ext\
 support_files\unzip support_files\download\4ext.zip -d support_files\download\4ext\ >>%log%
@@ -1663,6 +1686,15 @@ echo Our checksum is     %exthere% >>%log%
 echo Correct checksum is %extdl% >>%log%
 echo.
 IF "%extdl% " NEQ "%exthere%" (GOTO 4extinstallsu)
+cls
+echo ------------------------------
+echo       Install Superuser      
+echo ------------------------------
+echo.
+echo Preparing for root...
+echo Pushing files >>%log%
+support_files\adb push support_files\download\OTABlock.zip /sdcard/ >>%log% 2>&1
+support_files\adb push support_files\download\su.zip /sdcard/ >>%log% 2>&1
 :flash4extSU
 cls
 echo ------------------------------
@@ -1747,7 +1779,8 @@ cls
 color 0c
 echo.
 echo It appears that there was an error extracting.
-echo Try redownloading and re-running.
+echo Try redownloading and running the .exe in a 
+echo seperate folder.
 echo.
 echo Files necessary:
 echo.

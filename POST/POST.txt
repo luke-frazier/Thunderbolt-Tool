@@ -76,6 +76,10 @@ Put ThunderboltTool.exe in its own folder, then run ThunderboltTool.exe, then ru
 
 [COLOR="Red"][B][U]READ THE README THAT POPS UP ON THE FIRST RUN AND FOLLOW ALL ITS DIRECTIONS!!!![/U][/B]
 [/COLOR]
+[COLOR="Red"]WARNING: YOU MUST HAVE THE PHONE IN CHARGE ONLY AND THE SCREEN AWAKE AND UNLOCKED THE ENTIRE TIME THIS IS RUNNING FOR IT TO WORK PROPERLY.[/COLOR]
+
+If you have questions please post them in this thread as i do not check the entire section daily but i do check this thread a few times a day.
+
 [U][B]CHANGELOG:[/B][/U]
 
 Changelog can be found here: [URL]https://github.com/trter10/Thunderbolt-Tool/blob/master/CHANGELOG.txt[/URL]

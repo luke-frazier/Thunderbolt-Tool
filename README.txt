@@ -25,7 +25,7 @@ You can always open this file again. It's named README.txt.
        files and processes running and does not provide proper closure
        to the logs.
 
-      *Make sure USB Debugging and Stay Awake are
+      *Make sure USB Debugging AND STAY AWAKE are
  enabled in Settings >
        Apps > Development.
 
