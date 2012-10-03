@@ -14,6 +14,7 @@
 ::
 @echo off
 SETLOCAL
+cls REM in case called by cmd
 set verno=v1.0.0
 set buildtime=September 22 2012, 3:55 PM EST
 title                                            HTC Thunderbolt Tool %verno%
@@ -71,18 +72,19 @@ IF EXIST adb.exe (del adb.exe)
 ::*********************************SKIPPING UPDATES, REMOVE THIS PRIOR TO RELEASE******************************
 GOTO PROGRAM rem ADD :: FOR RELEASE VERSIONS
 :: * Script update engine  *
-echo Checking for updates...
 ::In case of freshly updated script...
 IF EXIST support_files\Script-MD5.txt (del support_files\Script-MD5.txt)
 IF EXIST OTA.bat (MOVE OTA.bat support_files\OTA.bat) >NUL
 IF EXIST support_files\Script-server-MD5.txt (del support_files\Script-server-MD5.txt)
 ::Building MD5 of current script
-support_files\md5sums ThunderboltTool.bat >support_files\Script-MD5.txt
 :: Downloading latest MD5 Definitions
 support_files\wget --quiet -O support_files\Script-server-MD5.txt http://www.androidfilehost.com/main/Thunderbolt_Developers/trter10/Script-server-MD5.txt?param=test
 ::Checking to see if there's a new version...
-fc /b support_files\Script-MD5.txt support_files\Script-server-MD5.txt >NUL
-if errorlevel 1 (
+FOR /F "tokens=1 delims=" %%a in ( 'support_files\md5sums ThunderboltTool.bat' ) do ( set script-md5=%%a )
+set /p script-new-md5=<support_files\Script-server-MD5.txt >>%log%
+echo Server MD5 is: "%script-new-md5% ">>%log%
+echo Our MD5:  "%script-md5%">>%log%
+IF "%script-new-md5% " NEQ "%script-md5%" (
 Echo Updating >>%log%
 GOTO OTA
 )
@@ -148,10 +150,7 @@ echo Getting necessary files..
 echo Getting log .bat >>%log%
 support_files\wget --quiet -O logs\RUN_ME_FOR_EMAIL.bat http://www.androidfilehost.com/main/Thunderbolt_Developers/trter10/RUN_ME_FOR_EMAIL.bat?param=test
 )
-::Editing OTA.bat
-support_files\cat support_files/OTA.bat | support_files\sed -e s/"echo There is a new version of this script availible. Downloading now..."/"echo Updating..."/ >support_files\newota.bat
-support_files\cat support_files/newota.bat >support_files\OTA.bat
-del support_files\newota.bat
+
 ::
 IF EXIST support_files\Script-MD5.txt (del support_files\Script-MD5.txt)
 IF EXIST support_files\Script-server-MD5.txt (del support_files\Script-server-MD5.txt)
@@ -255,8 +254,12 @@ set oldsu=- Outdated, please update in app
 set su1=Unknown
 set suver=Unknown
 ::For the real work
+:check
 FOR /F "tokens=2 delims=:" %%a in ( 'support_files\adb shell /system/xbin/su -v') do ( set su1=%%a )
 FOR /F "tokens=1 delims=:" %%a in ( 'support_files\adb shell /system/xbin/su -v') do ( set suver=%%a )
+FOR /F "tokens=1 delims=" %%a in ( 'support_files\adb shell "ls -l /system/xbin/su ^|awk ' { print $1 }'"') do ( set perms=%%a )
+FOR /F "tokens=1 delims=" %%a in ( 'support_files\adb shell "ls -l /system/xbin/su ^|awk ' { print $2 }'"') do ( set user=%%a )
+FOR /F "tokens=1 delims=" %%a in ( 'support_files\adb shell "ls -l /system/xbin/su ^|awk ' { print $3 }'"') do ( set group=%%a )
 ::Seeing if they do have su in the first place
 IF "%su1%" == " /system/xbin/su: not found " (
 set suhere=0
@@ -267,6 +270,10 @@ set suhere=0
 goto skipsu
 )
 IF "%su1%" == " permission denied " (
+set suhere=0
+goto skipsu
+)
+IF "%su1%" == " /system/xbin/su " (
 set suhere=0
 goto skipsu
 )
@@ -316,9 +323,18 @@ echo                Welcome to the HTC Thunderbolt tool, by trter10.
 echo.
 echo The SU binary is missing from your phone.
 echo.
-echo Press enter to install it.
-pause >NUL
-GOTO SOFFNOROOT2
+echo If you are just here to unroot, press 1.
+echo If you are unrooting to try to fix your 
+echo root, just install the SU binary here.
+echo Otherwise, it is a good idea to install.
+echo.
+echo Press 1 to unroot or 2 to install SU.
+echo.
+set /p m=Choose what you want to do or hit enter to exit. 
+IF "%M%" == "1" (GOTO UNROOT)
+IF "%M%" == "2" (GOTO SOFFNOROOT2)
+IF "%M%" == "NULL" (GOTO EXIT)
+goto nosumain
 
 :FASTBOOTONTOOLBOOT
 cls
@@ -457,9 +473,11 @@ set m=NULL
 echo.
 echo Phone information: 
 echo.
-echo     ROM Version: %romver%- Android %andver%
+echo     ROM Version: %romver:~0,-1%- Android %andver%
 IF "%recovery%" == "yes" (echo     Boot mode: Recovery) ELSE (echo     Boot mode: Normal)
-echo     %sukind% binary v%suver% 
+set po=
+IF "%perms%%user:~0,-1%.%group:~0,-1%" NEQ "-rwsr-sr-x root.root" (set po=INCORRECT PERMISSIONS)
+echo     %sukind% binary v%suver%(%perms%%user:~0,-1%.%group:~0,-1%) %po%
 :: %oldsu% BETA~~
 echo.
 echo  MAIN MENU
@@ -578,13 +596,21 @@ for /f "tokens=1 delims=" %%a in ( 'support_files\adb root' ) do ( set rooted=%%
 IF "%rooted%"=="adbd is already running as root " (GOTO SUCCESSFUL)
 set newver=no
 IF "%romver%" == "2.11.605.9 " (set newver=yes)
+IF "%romver%" == "Unknown " (set newver=yes)
 IF "%romver%" == "2.11.605.19 710RD " (set newver=yes)
 IF "%romver%" == "2.11.605.9  " (set newver=yes)
 IF "%romver%" == "2.11.605.19 710RD  " (set newver=yes)
 IF "%newver%" NEQ "yes" (
+
 echo Phone is on ROM Version "%romver%"so we will use ZergRush. >>%log%
 echo Temp rooting >>%log%
 support_files\wget --quiet -O support_files\root\ZergRush http://www.androidfilehost.com/main/Thunderbolt_Developers/trter10/ZergRush?param=test
+IF "%retry%" == "yes" (
+echo --ROM version is unknown 
+echo --and fre3vo failed, so we
+echo --will try ZergRush.
+echo.
+)
 echo Preparing for S-OFF with
 echo ZergRush. Thanks Revolutionary
 echo team!
@@ -611,7 +637,13 @@ support_files\adb kill-server >NUL 2>&1
 support_files\adb start-server >NUL 2>&1
 ::Ensuring root was successful...
 for /f "tokens=1 delims=" %%a in ( 'support_files\adb root' ) do ( set rooted=%%a )
-IF "%rooted%"=="adbd is already running as root " (GOTO SUCCESSFUL) ELSE (GOTO UNSUCCESSFUL)
+IF "%rooted%"=="adbd is already running as root " (GOTO SUCCESSFUL) ELSE (
+IF "%romver%" == "Unknown " (
+set newver=no
+set retry=yes
+goto mroot
+)
+GOTO UNSUCCESSFUL
 :SUCCESSFUL
 cls
 echo ------------------------------
@@ -1798,4 +1830,8 @@ pause >NUL
 echo Exiting... >>%log%
 IF EXIST support_files\Script-new-MD5.txt (del support_files\Script-new-MD5.txt)
 support_files\adb kill-server
+cls
+color 07
+:: ^^in case called by cmd
+::no exit command so it wont kill the cmd if called by it
 ENDLOCAL
