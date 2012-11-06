@@ -23,15 +23,15 @@ echo Updating...
 echo.
 IF NOT EXIST support_files\Script-server-MD5.txt (support_files\wget --quiet -O support_files\Script-server-MD5.txt http://www.androidfilehost.com/main/Thunderbolt_Developers/trter10/Script-server-MD5.txt?param=test >>%log%)
 del ThunderboltTool.bat
-support_files\wget -O ThunderboltTool.bat http://www.androidfilehost.com/main/Thunderbolt_Developers/trter10/ThunderboltTool.bat?param=test >>%log% 2>&1
+support_files\wget -O support_files\ThunderboltTool.bat http://www.androidfilehost.com/main/Thunderbolt_Developers/trter10/ThunderboltTool.bat?param=test >>%log% 2>&1
+MOVE support_files\ThunderboltTool.bat ThunderboltTool.bat >>%log%
 echo.
-::Checking MD5sums
-FOR /F "tokens=1 delims=" %%a in ( 'support_files\md5sums ThunderboltTool.bat' ) do ( set script-md5=%%a )
-set /p newmd5=<support_files\Script-MD5.txt
+::Checking MD5sums again, just to make it failproof.
+for /f "tokens=1 delims=" %%a in ( 'support_files\md5sums ThunderboltTool.bat' ) do ( set newmd5=%%a )
 set /p servermd5=<support_files\Script-server-MD5.txt
-echo Our checksum is      "%script-md5%" >>%log%
-echo Correct checksum is  "%servermd5%" >>%log%
-if "%script-md5%" NEQ "%servermd5% " (
+echo Our checksum is      %newmd5% >>%log%
+echo Correct checksum is  %servermd5% >>%log%
+if "%newmd5%" NEQ "%servermd5%" (
 echo Re-Downloading due to bad checksum >>%log%
 GOTO MAIN
 )

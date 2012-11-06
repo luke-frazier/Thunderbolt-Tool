@@ -44,7 +44,9 @@ v1.0.0 - Unreleased
  major functionality as of yet
 -Now starts revolutionary website in default 
  browser. (Fixes not found error IE is disabled.)
-
+-Opens BusyBox app by Stephen (Stericson) 
+ (pname:stericson.busybox) rather than manually
+ installing busybox.
 ---------------------------------------------------
 v0.1b4 - 6/13/12 (?)
 
