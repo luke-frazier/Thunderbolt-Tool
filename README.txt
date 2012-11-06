@@ -38,14 +38,9 @@ You can always open this file again. It's named README.txt.
 
 
 
-      *Keep the phone's screen on at all times (important!)
+      *Keep the phone's screen on and unlocked at all times (important!)
 
-      *If you are HTCDev unlocked, you must first RELOCK, and then S-OFF
-       and root. WARNING! IF YOU RELOCK WITHOUT RUU'ING YOU WILL GET A 
-       SECURITY WARNING AND WILL NOT BE ABLE TO BOOT THE PHONE!!
-       (You put the RUU on the SD card, then fastboot oem lock, 
-       then go to hboot and flash the RUU. IT WILL WIPE YOUR DATA!!)
-       If you don't know how to do this, contact me, info below.
+      *If you are HTCDev unlocked, it is safe to root with this.
      
 
 
@@ -63,7 +58,8 @@ You can always open this file again. It's named README.txt.
 
 **Want to contact or thank me?
 
-      *IF YOU CONTACT ME WITH AN ISSUE, INCLUDE YOUR LOG FILES! (In log folder)
+      *PLEASE INCLUDE YOUR LOG FILES! (In log folder, just run the        
+       RUN_ME_FOR_EMAIL.bat and send me that zip with your issue.)
 
       *Tweet me, @trter10
 
