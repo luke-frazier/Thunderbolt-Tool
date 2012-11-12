@@ -839,11 +839,10 @@ echo                                     -You must have a full battery charge.
 echo.
 pause >NUL
 :radtest
-::
-cls
 ::debugging purposes only
 ::set icsradios=yes
 IF "%icsradios%" NEQ "yes" (GOTO REPUSH)
+cls
 echo ------------------------------
 echo            Unrooter            
 echo ------------------------------
@@ -857,6 +856,7 @@ echo.
 echo Press enter when ready.
 pause >NUL
 :radmd5
+set flashrad=yes
 IF NOT EXIST support_files\download\latestradio.zip (GOTO getradio)
 cls
 echo ------------------------------
@@ -1037,8 +1037,10 @@ cls
 echo ------------------------------
 echo            Unrooter            
 echo ------------------------------
+IF "%flashrad%" == "yes" (
 echo. 
-echo Radio downgrade successful! 
+echo Radio downgrade successful!
+)
 echo.
 echo Pushing stock RUU to SDCard... 
 echo This will take a few minutes...
@@ -1838,6 +1840,7 @@ RMDIR "support_files\root" /S /Q >>%log%
 RMDIR "support_files\unroot" /S /Q >>%log%
 del support_files\RAN >>%log%
 del support_files\RAN1 >>%log%
+IF EXIST support_files\push (del support_files\push) >>%log%
 cls
 echo ------------------------------
 echo     Reset Thunderbolt Tool

@@ -53,6 +53,8 @@ v1.0.0 - Unreleased
  process
 -Fixed bug where some redirects to %log% would wipe
  out the entire log
+-Reset tool option in extras menu
+
 ---------------------------------------------------
 v0.1b4 - 6/13/12 (?)
 
