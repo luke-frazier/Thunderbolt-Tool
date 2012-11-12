@@ -17,7 +17,7 @@
 SETLOCAL
 cls REM in case called by cmd
 set verno=v1.0.0
-set buildtime=September 22 2012, 3:55 PM EST
+set buildtime=November 12 2012, 1:38 AM EST
 title                                            HTC Thunderbolt Tool %verno%
 color 0b
 IF "%1" == "INFO" (
@@ -71,7 +71,7 @@ IF EXIST adbwinusbapi.dll (del adbwinusbapi.dll)
 IF EXIST fastboot.exe (del fastboot.exe)
 IF EXIST adb.exe (del adb.exe)
 ::*********************************SKIPPING UPDATES, REMOVE THIS PRIOR TO RELEASE******************************
-GOTO PROGRAM rem ADD :: FOR RELEASE VERSIONS
+::GOTO PROGRAM rem ADD :: FOR RELEASE VERSIONS
 :: * Script update engine  *
 ::In case of freshly updated script...
 IF EXIST support_files\Script-MD5.txt (del support_files\Script-MD5.txt)
