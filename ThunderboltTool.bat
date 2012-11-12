@@ -1,3 +1,4 @@
+
 ::  This program is free software: you can redistribute it and/or modify
 ::    it under the terms of the GNU General Public License as published by
 ::    the Free Software Foundation, either version 3 of the License, or
@@ -211,8 +212,8 @@ set recovery=No
 goto normboot
 )
 echo Phone is in recovery mode >>%log%
-support_files\adb shell mount /sdcard >%log% 2>&1
-support_files\adb shell mount /data >%log% 2>&1
+support_files\adb shell mount /sdcard >>%log% 2>&1
+support_files\adb shell mount /data >>%log% 2>&1
 support_files\adb shell mount /cache >>%log% 2>&1
 set recovery=yes
 
@@ -241,6 +242,7 @@ for /f "tokens=2 delims==" %%a in ( 'support_files\adb shell cat /system/build.p
 ::
 ::Now looing back on this code (It is now 8/4/2012) I have no idea how this adds recovery compatibility.
 ::But I'm not gonna screw with it.
+::Edit 11/11/12 - I know how it works now. k.
 ::
 for /f "tokens=2 delims==" %%a in ( 'support_files\adb shell cat /system/build.prop ^| find "ro.product.version"' ) do ( set romver1=%%a )
 IF "%romver1%" == "Unknown" (for /f "tokens=2 delims==" %%a in ( 'support_files\adb shell cat /system/build.prop ^| find "ro.build.display.id"' ) do ( set romver1=%%a ))
@@ -704,9 +706,34 @@ echo X = MsgBox("Please note that you need to enter Y to download and flash CWM 
 :su-no-ota
 echo Putting files on phone >>%log%
 echo.
+:repushSu
 support_files\adb wait-for-device
 echo  -SU >>%log%
-support_files\adb push support_files\root\su.zip /sdcard/su.zip >>%log% 2>&1
+support_files\adb push support_files\root\su.zip /sdcard/su.zip >support_files\pushSu 2>&1
+support_files\cat support_files/pushSu >>%log% 2>&1
+for /f "tokens=2 delims=(" %%a in ( 'support_files\cat support_files/pushSu' ) do ( set pushSu1=%%a )
+echo %pushSu1% >support_files\pushSu
+for /f "tokens=1 delims=i" %%a in ( 'support_files\cat support_files/pushSu' ) do ( set pushSu2=%%a )
+echo pushSu1 is "%pushSu1%" >>%log%
+echo pushSu2 is "%pushSu2%" >>%log%
+del support_files\pushSu
+IF "%pushSu2%" == "1324669 bytes  " (goto sugood)
+cls
+echo ------------------------------
+echo             Rooter            
+echo ------------------------------
+echo. 
+echo It appears there was an error 
+echo pushing some files to the phone.
+echo.
+echo Please make sure Stay Awake and
+echo Charge Only are enabled. The phone
+echo screen must stay on the entire time.
+echo.
+echo Press enter to repush...
+pause >NUL
+goto repushSu
+:sugood
 echo  -OTABlock >>%log%
 support_files\adb push support_files\root\OTABlock.zip /sdcard/OTABlock.zip >>%log% 2>&1
 echo  -Extendedcommand >>%log%
@@ -815,7 +842,7 @@ pause >NUL
 ::
 cls
 ::debugging purposes only
-set icsradios=yes
+::set icsradios=yes
 IF "%icsradios%" NEQ "yes" (GOTO REPUSH)
 echo ------------------------------
 echo            Unrooter            
@@ -875,7 +902,7 @@ support_files\adb push support_files\download\latestradio.zip /sdcard/PG05IMG.zi
 support_files\cat support_files/pushRadio >>%log% 2>&1
 for /f "tokens=2 delims=(" %%a in ( 'support_files\cat support_files/pushRadio' ) do ( set pushRadio1=%%a )
 echo %pushRadio1% >support_files\pushRadio
-for /f "tokens=1 delims=i" %%a in ( 'support_files\cat support_files/push' ) do ( set pushRadio2=%%a )
+for /f "tokens=1 delims=i" %%a in ( 'support_files\cat support_files/pushRadio' ) do ( set pushRadio2=%%a )
 echo pushRadio1 is "%pushRadio1%" >>%log%
 echo pushRadio2 is "%pushRadio2%" >>%log%
 del support_files\pushRadio
@@ -885,7 +912,7 @@ echo ------------------------------
 echo            Unrooter            
 echo ------------------------------
 echo. 
-echo It appears thete was an error 
+echo It appears there was an error 
 echo pushing the radio.
 echo.
 echo Please make sure Stay Awake and
@@ -939,10 +966,44 @@ support_files\adb kill-server >NUL 2>&1
 support_files\adb start-server >NUL 2>&1
 support_files\adb wait-for-device
 pause >NUL
-support_files\adb shell rm /sdcard/PG05IMG.zip
-:SAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-::TEST FOR PROPER REMOVAL!03ieq29ue9qhadsj'aodjcxomcomzdcmasd
-:SAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+:rmrad
+echo Removing radio >>%log%
+cls
+echo ------------------------------
+echo            Unrooter            
+echo ------------------------------
+echo.
+echo Please wait...
+set tries=0
+set triestwo=0
+:rerm
+echo Attempt "%triestwo%" >>%log%
+set rm=NULL
+IF %triestwo% GEQ 1 (
+PING 1.1.1.1 -n 1 -w 5000 >NUL
+echo rm is "%rm%" >>%log%
+)
+IF %triestwo% GEQ 5 (
+set tries=0
+set triestwo=0
+cls
+echo ------------------------------
+echo            Unrooter            
+echo ------------------------------
+echo.
+echo I'm having issues removing the radio
+echo from the SD Card. Make sure the screen
+echo is on and unlocked!
+echo.
+echo Press enter to retry.
+pause >NUL
+goto rmrad
+)
+set /a triestwo= %tries%+1
+set tries=%triestwo%
+for /f "tokens=1 delims=" %%a in ( 'support_files\adb shell rm /sdcard/PG05IMG.zip' ) do ( set rm=%%a )
+echo rm right nao is "%rm%" >>%log%
+IF "%rm%" == "rm failed for /sdcard/PG05IMG.zip, Permission denied " (goto rerm)
 ::let's make sure the flash completed successfully 
 :waitforrad
 set radiover=NULL
@@ -999,7 +1060,7 @@ echo ------------------------------
 echo            Unrooter            
 echo ------------------------------
 echo. 
-echo It appears thete was an error 
+echo It appears there was an error 
 echo pushing the RUU.
 echo.
 echo Please make sure Stay Awake and
@@ -1065,12 +1126,48 @@ echo If it did not flash successfully, DO NOT TURN OFF YOUR PHONE, send me an em
 echo.
 echo If it flashed correctly, and your phone says "Update Complete...", press POWER.
 echo If your phone sits there turned off for a minute or more with the orange light  on, just hold the power button for a second or two and let go.
-echo Then, when you are back at your homescreen, go through the activation menu,     enable USB debugging again, and set to charge only.
+echo Then, when you are back at your homescreen, go through the activation menu,     enable USB debugging again, set to charge only, and I will take control again.
 echo ------------------------------------------------------------------------------
 support_files\adb kill-server >NUL 2>&1
 support_files\adb start-server >NUL 2>&1
 support_files\adb wait-for-device
-support_files\adb shell rm /sdcard/PG05IMG.zip
+:rmrom
+echo Removing rom >>%log%
+cls
+echo ------------------------------
+echo            Unrooter            
+echo ------------------------------
+echo.
+echo Please wait...
+set tries=0
+set triestwo=0
+:rermrom
+echo Attempt "%triestwo%" >>%log%
+echo 
+set rm=NULL
+IF %triestwo% GEQ 1 (
+PING 1.1.1.1 -n 1 -w 5000 >NUL
+echo rm is "%rm%" >>%log%
+)
+IF %triestwo% GEQ 5 (
+cls
+echo ------------------------------
+echo            Unrooter            
+echo ------------------------------
+echo.
+echo I'm having issues removing the radio
+echo from the SD Card. Make sure the screen
+echo is on and unlocked!
+echo.
+echo Press enter to retry.
+pause >NUL
+goto rmrom
+)
+set /a triestwo= %tries%+1
+set tries=%triestwo%
+for /f "tokens=1 delims=" %%a in ( 'support_files\adb shell rm /sdcard/PG05IMG.zip' ) do ( set rm=%%a )
+echo rm right nao is "%rm%" >>%log%
+IF "%rm%" == "rm failed for /sdcard/PG05IMG.zip, Permission denied" (goto rermrom)
 cls
 echo ------------------------------
 echo            Unrooter            
@@ -1270,7 +1367,7 @@ echo ------------------------------
 echo          Install zip          
 echo ------------------------------
 echo.
-echo It appears thete was an error 
+echo It appears there was an error 
 echo pushing the file.
 echo.
 echo Please make sure Stay Awake and
@@ -1716,7 +1813,7 @@ echo.
 echo WARNING! This will delete all downloaded
 echo files and will clear all logs. Only use
 echo if you want to return the tool to how it
-echo was when you first ran it. 
+echo was when you first ran it!
 echo.
 set /p M=Press 1 to continue or enter to return. 
 color 0b

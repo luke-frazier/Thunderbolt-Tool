@@ -32,21 +32,27 @@ v1.0.0 - Unreleased
 -Added stability to make sure files are not corrupt
 -Cleaned up the code a lot with FOR /F
 -Many edits to menus
--A key such as ; or ) input in a menu no longer 
- crashes the program
+-An erroneous key input in a menu no longer crashes
+ the tool
 -Startup is cleaner
 -Now sets PATH to C:\WINDOWS\SYSTEM32 at startup to
  avoid any "'XX' is not recognized as an internal 
  or external command, operable program or batch 
  file." errors. But I run SETLOCAL so I don't mess
- with the user's real path settings.
+ with the user's real path settings
 -Can now detect a phone in fastboot but has no 
  major functionality as of yet
 -Now starts revolutionary website in default 
- browser. (Fixes not found error IE is disabled.)
+ browser (Fixes not found error IE is disabled)
 -Opens BusyBox app by Stephen (Stericson) 
  (pname:stericson.busybox) rather than manually
- installing busybox.
+ installing busybox
+-Checks for leaked ICS radios and if they are found
+ downgrades user to older ones
+-Waits for a full boot if the phone is in the boot
+ process
+-Fixed bug where some redirects to %log% would wipe
+ out the entire log
 ---------------------------------------------------
 v0.1b4 - 6/13/12 (?)
 
