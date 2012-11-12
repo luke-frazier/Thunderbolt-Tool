@@ -1,3 +1,4 @@
+
 ::  This program is free software: you can redistribute it and/or modify
 ::    it under the terms of the GNU General Public License as published by
 ::    the Free Software Foundation, either version 3 of the License, or
@@ -16,7 +17,7 @@
 SETLOCAL
 cls REM in case called by cmd
 set verno=v1.0.0
-set buildtime=September 22 2012, 3:55 PM EST
+set buildtime=November 12 2012, 1:38 AM EST
 title                                            HTC Thunderbolt Tool %verno%
 color 0b
 IF "%1" == "INFO" (
@@ -70,7 +71,7 @@ IF EXIST adbwinusbapi.dll (del adbwinusbapi.dll)
 IF EXIST fastboot.exe (del fastboot.exe)
 IF EXIST adb.exe (del adb.exe)
 ::*********************************SKIPPING UPDATES, REMOVE THIS PRIOR TO RELEASE******************************
-GOTO PROGRAM rem ADD :: FOR RELEASE VERSIONS
+::GOTO PROGRAM rem ADD :: FOR RELEASE VERSIONS
 :: * Script update engine  *
 ::In case of freshly updated script...
 IF EXIST support_files\Script-MD5.txt (del support_files\Script-MD5.txt)
@@ -197,7 +198,6 @@ GOTO skip
 set warn=
 echo Getting phone info >>%log%
 echo -- >>%log%
-support_files\adb shell mkdir /sdcard/tbolt-tool >NUL 2>&1
 ::My workaround to get this to work in recovery mode (Just in case)
 ::Any addidtional /system/bin's before getprop are for this reason also.
 FOR /F "tokens=1 delims=" %%a in ( 'support_files\adb shell mount system' ) do ( set bv=%%a )
@@ -212,12 +212,29 @@ set recovery=No
 goto normboot
 )
 echo Phone is in recovery mode >>%log%
-support_files\adb shell mount /sdcard >%log% 2>&1
-support_files\adb shell mount /data >%log% 2>&1
+support_files\adb shell mount /sdcard >>%log% 2>&1
+support_files\adb shell mount /data >>%log% 2>&1
 support_files\adb shell mount /cache >>%log% 2>&1
 set recovery=yes
 
 :normboot
+IF "%waitforboot%" == "1" (
+cls
+echo Waiting for full boot...
+)
+::Checking Radio version
+for /f "tokens=1 delims=" %%a in ( 'support_files\adb shell getprop gsm.version.baseband' ) do ( set radiover=%%a )
+IF "%radiover%" == "" (
+set waitforboot=1
+goto normboot
+)
+IF "%radiover%" == " " (
+set waitforboot=1
+goto normboot
+)
+IF "%radiover%" == "1.49.00.0406w_1, 0.02.00.0312r " (set icsradios=yes)
+IF "%radiover%" == "2.00.00.0308r, 0.02.00.0312r " (set icsradios=yes)
+IF "%radiover%" == "2.00.00.0308r, 0.01.79.0331w_1 " (set icsradios=yes)
 ::Checking ROM Version
 ::Android ver
 for /f "tokens=2 delims==" %%a in ( 'support_files\adb shell cat /system/build.prop ^| find "ro.build.version.release"' ) do ( set andver=%%a )
@@ -225,6 +242,7 @@ for /f "tokens=2 delims==" %%a in ( 'support_files\adb shell cat /system/build.p
 ::
 ::Now looing back on this code (It is now 8/4/2012) I have no idea how this adds recovery compatibility.
 ::But I'm not gonna screw with it.
+::Edit 11/11/12 - I know how it works now. k.
 ::
 for /f "tokens=2 delims==" %%a in ( 'support_files\adb shell cat /system/build.prop ^| find "ro.product.version"' ) do ( set romver1=%%a )
 IF "%romver1%" == "Unknown" (for /f "tokens=2 delims==" %%a in ( 'support_files\adb shell cat /system/build.prop ^| find "ro.build.display.id"' ) do ( set romver1=%%a ))
@@ -257,9 +275,20 @@ set suver=Unknown
 :check
 FOR /F "tokens=2 delims=:" %%a in ( 'support_files\adb shell /system/xbin/su -v') do ( set su1=%%a )
 FOR /F "tokens=1 delims=:" %%a in ( 'support_files\adb shell /system/xbin/su -v') do ( set suver=%%a )
+FOR /F "tokens=1 delims=" %%a in ( 'support_files\adb shell /system/xbin/busybox a') do ( set bbhere=%%a )
+echo RAW BBHERE "%bbhere%">>%log%
+IF "%bbhere%" == "a: applet not found " (set hasbb=yes)
+FOR /F "tokens=1 delims=" %%a in ( 'support_files\adb shell /system/bin/busybox a') do ( set bbhere=%%a )
+IF "%bbhere%" == "a: applet not found " (set hasbb=yes)
+IF "%hasbb%" NEQ "yes" (
+set hasbb=no
+goto skipperms
+)
 FOR /F "tokens=1 delims=" %%a in ( 'support_files\adb shell "ls -l /system/xbin/su ^|awk ' { print $1 }'"') do ( set perms=%%a )
 FOR /F "tokens=1 delims=" %%a in ( 'support_files\adb shell "ls -l /system/xbin/su ^|awk ' { print $2 }'"') do ( set user=%%a )
 FOR /F "tokens=1 delims=" %%a in ( 'support_files\adb shell "ls -l /system/xbin/su ^|awk ' { print $3 }'"') do ( set group=%%a )
+:skipperms
+echo RAW HASBB "%hasbb%">>%log%
 ::Seeing if they do have su in the first place
 IF "%su1%" == " /system/xbin/su: not found " (
 set suhere=0
@@ -290,7 +319,7 @@ echo.
 echo Bootloader: %bl% %bootloader% >>%log%
 echo ADB rooted: %adbrt% >>%log%
 echo ROM Version: %romver% - Android %andver% >>%log%
-echo Superuser: %sukind% binary v%suver%%oldsu% >>%log%
+echo Superuser: %sukind% binary v%suver% >>%log%
 echo -- >>%log%
 :skip
 title                                            HTC Thunderbolt Tool %verno%
@@ -320,6 +349,10 @@ GOTO EXIT
 cls
 echo Loading no su main >>%log%
 echo                Welcome to the HTC Thunderbolt tool, by trter10.
+echo.
+echo ------------------------------
+echo       Install Superuser      
+echo ------------------------------
 echo.
 echo The SU binary is missing from your phone.
 echo.
@@ -465,6 +498,11 @@ GOTO EXIT
 GOTO stockmain
 
 :rootmain
+::prereq's
+IF "%recovery%" == "yes" (echo     Boot mode: Recovery) ELSE (echo     Boot mode: Normal)
+IF "%perms%%user:~0,-1%.%group:~0,-1%" NEQ "-rwsr-sr-x root.root" (set po=INCORRECT PERMISSIONS)
+set po=
+:: ---------------
 cls
 echo Loading root main menu >>%log%
 echo -- >>%log%
@@ -474,11 +512,14 @@ echo.
 echo Phone information: 
 echo.
 echo     ROM Version: %romver:~0,-1%- Android %andver%
-IF "%recovery%" == "yes" (echo     Boot mode: Recovery) ELSE (echo     Boot mode: Normal)
-set po=
-IF "%perms%%user:~0,-1%.%group:~0,-1%" NEQ "-rwsr-sr-x root.root" (set po=INCORRECT PERMISSIONS)
-echo     %sukind% binary v%suver%(%perms%%user:~0,-1%.%group:~0,-1%) %po%
-:: %oldsu% BETA~~
+echo.
+	:: %oldsu% BETA~~ 
+IF "%hasbb%" == "yes" (
+	echo     %sukind% binary v%suver%^(%perms%%user:~0,-1%.%group:~0,-1%^) %po%
+)
+IF "%hasbb%" NEQ "yes" (
+	echo     %sukind% binary v%suver%
+)
 echo.
 echo  MAIN MENU
 echo --------------------------------------------------------
@@ -665,9 +706,34 @@ echo X = MsgBox("Please note that you need to enter Y to download and flash CWM 
 :su-no-ota
 echo Putting files on phone >>%log%
 echo.
+:repushSu
 support_files\adb wait-for-device
 echo  -SU >>%log%
-support_files\adb push support_files\root\su.zip /sdcard/su.zip >>%log% 2>&1
+support_files\adb push support_files\root\su.zip /sdcard/su.zip >support_files\pushSu 2>&1
+support_files\cat support_files/pushSu >>%log% 2>&1
+for /f "tokens=2 delims=(" %%a in ( 'support_files\cat support_files/pushSu' ) do ( set pushSu1=%%a )
+echo %pushSu1% >support_files\pushSu
+for /f "tokens=1 delims=i" %%a in ( 'support_files\cat support_files/pushSu' ) do ( set pushSu2=%%a )
+echo pushSu1 is "%pushSu1%" >>%log%
+echo pushSu2 is "%pushSu2%" >>%log%
+del support_files\pushSu
+IF "%pushSu2%" == "1324669 bytes  " (goto sugood)
+cls
+echo ------------------------------
+echo             Rooter            
+echo ------------------------------
+echo. 
+echo It appears there was an error 
+echo pushing some files to the phone.
+echo.
+echo Please make sure Stay Awake and
+echo Charge Only are enabled. The phone
+echo screen must stay on the entire time.
+echo.
+echo Press enter to repush...
+pause >NUL
+goto repushSu
+:sugood
 echo  -OTABlock >>%log%
 support_files\adb push support_files\root\OTABlock.zip /sdcard/OTABlock.zip >>%log% 2>&1
 echo  -Extendedcommand >>%log%
@@ -772,18 +838,216 @@ echo.
 echo                                     -You must have a full battery charge.
 echo.
 pause >NUL
-:REPUSH
+:radtest
+::debugging purposes only
+::set icsradios=yes
+IF "%icsradios%" NEQ "yes" (GOTO REPUSH)
 cls
 echo ------------------------------
 echo            Unrooter            
 echo ------------------------------
 echo. 
+echo It appears that you are on the
+echo leaked ICS radios. You are on
+echo "%radiover:~0,-1%".
+echo To unroot, we must first flash
+echo back down to Gingerbread radios.
+echo.
+echo Press enter when ready.
+pause >NUL
+:radmd5
+set flashrad=yes
+IF NOT EXIST support_files\download\latestradio.zip (GOTO getradio)
+cls
+echo ------------------------------
+echo            Unrooter            
+echo ------------------------------
+echo.
+echo Preparing radio >>%log%
+echo Preparing radio...
+for /f "tokens=1 delims=" %%a in ( 'support_files\md5sums -l support_files\download\latestradio.zip' ) do ( set radiohere=%%a )
+echo Our checksum is     "%radiohere%" >>%log%
+echo Correct checksum is "1964f4062039e27f29a49af63004217f  support_files\download\latestradio.zip" >>%log%
+IF "%radiohere%" == "1964f4062039e27f29a49af63004217f  support_files\download\latestradio.zip " (GOTO flashradio)
+cls
+echo ------------------------------
+echo            Unrooter            
+echo ------------------------------
+echo.
+echo Redownloading radio due to bad checksum >>%log%
+echo Bad download! Sorry!
+echo Redownloading...
+goto justdownloadradio
+:getradio
+cls
+echo ------------------------------
+echo            Unrooter            
+echo ------------------------------
+echo.
+echo Downloading radio >>%log%
+echo Downloading radio, thanks xredjokerx!
+:justdownloadradio
+support_files\wget -O support_files\download\latestradio.zip http://www.androidfilehost.com/main/Thunderbolt_Developers/trter10/latestradio.zip?param=test >>%log% 2>&1
+title                                            HTC Thunderbolt Tool %verno%
+goto radmd5
+:flashradio
+cls
+echo ------------------------------
+echo            Unrooter            
+echo ------------------------------
+echo.
+echo Pushing radio to SDCard, please wait...
+echo Pushing radio >>%log%
+support_files\adb push support_files\download\latestradio.zip /sdcard/PG05IMG.zip >support_files\pushRadio 2>&1
+support_files\cat support_files/pushRadio >>%log% 2>&1
+for /f "tokens=2 delims=(" %%a in ( 'support_files\cat support_files/pushRadio' ) do ( set pushRadio1=%%a )
+echo %pushRadio1% >support_files\pushRadio
+for /f "tokens=1 delims=i" %%a in ( 'support_files\cat support_files/pushRadio' ) do ( set pushRadio2=%%a )
+echo pushRadio1 is "%pushRadio1%" >>%log%
+echo pushRadio2 is "%pushRadio2%" >>%log%
+del support_files\pushRadio
+IF "%pushRadio2%" == "26687391 bytes  " (goto goodradio)
+cls
+echo ------------------------------
+echo            Unrooter            
+echo ------------------------------
+echo. 
+echo It appears there was an error 
+echo pushing the radio.
+echo.
+echo Please make sure Stay Awake and
+echo Charge Only are enabled. The phone
+echo screen must stay on for the push.
+echo.
+echo Press enter to repush...
+pause >NUL
+goto flashradio
+:goodradio
+cls
+echo ------------------------------
+echo            Unrooter            
+echo ------------------------------
+echo.
+echo Rebooting to fastboot...
+support_files\adb reboot-bootloader
+cls
+echo ------------------------------
+echo            Unrooter            
+echo ------------------------------
+echo.
+echo Switching to HBOOT >>%log%
+echo Switching to HBOOT...
+echo.
+echo If it gets stuck here for more than
+echo 15 seconds, you should either try
+echo running Driver.exe, or use a
+echo different, non-USB3.0 port.
+echo.
+support_files\fastboot oem gotohboot >>%log% 2>&1
+cls
+cls
+echo ------------------------------
+echo            Unrooter            
+echo ------------------------------
+echo.
+echo ------------------------------------------------------------------------------
+echo Wait a few seconds, and your phone will load a file.
+echo Then, press VOLUME UP to confirm that you want to flash the file.
+echo During the flash, DO NOT I repeat DO NOT power off the phone!!
+echo.
+echo Please make sure that the flash completed successfully.
+echo If it did not flash successfully, DO NOT TURN OFF YOUR PHONE, and send me an    email with info on what happened.
+echo.
+echo If it flashed correctly, and your phone says "Update Complete...", press POWER.
+echo If your phone sits there turned off for a minute or more with the orange light  on, just hold the power button for a second or two and let go.
+echo Once the phone boots up, unlock the screen, press enter, and  I will take       control again.
+echo ------------------------------------------------------------------------------
+support_files\adb kill-server >NUL 2>&1
+support_files\adb start-server >NUL 2>&1
+support_files\adb wait-for-device
+pause >NUL
+:rmrad
+echo Removing radio >>%log%
+cls
+echo ------------------------------
+echo            Unrooter            
+echo ------------------------------
+echo.
+echo Please wait...
+set tries=0
+set triestwo=0
+:rerm
+echo Attempt "%triestwo%" >>%log%
+set rm=NULL
+IF %triestwo% GEQ 1 (
+PING 1.1.1.1 -n 1 -w 5000 >NUL
+echo rm is "%rm%" >>%log%
+)
+IF %triestwo% GEQ 5 (
+set tries=0
+set triestwo=0
+cls
+echo ------------------------------
+echo            Unrooter            
+echo ------------------------------
+echo.
+echo I'm having issues removing the radio
+echo from the SD Card. Make sure the screen
+echo is on and unlocked!
+echo.
+echo Press enter to retry.
+pause >NUL
+goto rmrad
+)
+set /a triestwo= %tries%+1
+set tries=%triestwo%
+for /f "tokens=1 delims=" %%a in ( 'support_files\adb shell rm /sdcard/PG05IMG.zip' ) do ( set rm=%%a )
+echo rm right nao is "%rm%" >>%log%
+IF "%rm%" == "rm failed for /sdcard/PG05IMG.zip, Permission denied " (goto rerm)
+::let's make sure the flash completed successfully 
+:waitforrad
+set radiover=NULL
+for /f "tokens=1 delims=" %%a in ( 'support_files\adb shell getprop gsm.version.baseband' ) do ( set radiover=%%a )
+IF "%radiover%" == "" (goto waitforrad)
+IF "%radiover%" == " " (goto waitforrad)
+echo After our flash, the radio is now "%radiover%" >>%log%
+set icsradafterflash=NULL
+IF "%radiover%" == "1.49.00.0406w_1, 0.02.00.0312r " (set icsradafterflash=yes)
+IF "%radiover%" == "2.00.00.0308r, 0.02.00.0312r " (set icsradafterflash=yes)
+IF "%radiover%" == "2.00.00.0308r, 0.01.79.0331w_1 " (set icsradafterflash=yes)
+IF "%icsradafterflash%" == "yes" (
+cls
+echo ------------------------------
+echo            Unrooter            
+echo ------------------------------
+echo.
+echo It seems that you still have the ICS
+echo radios even after the flash, so I'm 
+echo assuming there was an issue.
+echo.
+echo Press enter to repush the radios and 
+echo reflash.
+echo.
+PAUSE >NUL
+goto flashradio
+)
+
+:REPUSH
+cls
+echo ------------------------------
+echo            Unrooter            
+echo ------------------------------
+IF "%flashrad%" == "yes" (
+echo. 
+echo Radio downgrade successful!
+)
+echo.
 echo Pushing stock RUU to SDCard... 
 echo This will take a few minutes...
 echo.
 echo Just in case of PG05IMG >>%log%
 support_files\adb shell rm /sdcard/PG05IMG.zip >>%log% 2>&1
-echo Pushing files >>%log%
+echo Pushing RUU >>%log%
 support_files\adb push support_files\unroot\Stock-ROM.zip /sdcard/PG05IMG.zip >support_files\push 2>&1
 support_files\cat support_files/push >>%log% 2>&1
 for /f "tokens=2 delims=(" %%a in ( 'support_files\cat support_files/push' ) do ( set push1=%%a )
@@ -798,7 +1062,7 @@ echo ------------------------------
 echo            Unrooter            
 echo ------------------------------
 echo. 
-echo It appears thete was an error 
+echo It appears there was an error 
 echo pushing the RUU.
 echo.
 echo Please make sure Stay Awake and
@@ -807,7 +1071,7 @@ echo screen must stay on for the push.
 echo.
 echo Press enter to repush...
 pause >NUL
- goto REPUSH
+goto REPUSH
 :GOOD
 echo File pushed >>%log%
 cls
@@ -860,23 +1124,62 @@ echo.
 echo It will power cycle during the RUU, DO NOT mess with it, just let it run its    course.
 echo.
 echo Please make sure that the flash completed successfully. It will say - Bypassed  on one.
-echo If it did not flash successfully, DO NOT TURN OFF YOUR PHONE, download an IRC   client and seek help on #thunderbolt on irc.andirc.net
+echo If it did not flash successfully, DO NOT TURN OFF YOUR PHONE, send me an email  with info on what happened.
 echo.
 echo If it flashed correctly, and your phone says "Update Complete...", press POWER.
 echo If your phone sits there turned off for a minute or more with the orange light  on, just hold the power button for a second or two and let go.
-echo Then, when you are back at your homescreen, go through the activation menu,     enable USB debugging again, and set to charge only.
+echo Then, when you are back at your homescreen, go through the activation menu,     enable USB debugging again, set to charge only, and I will take control again.
 echo ------------------------------------------------------------------------------
 support_files\adb kill-server >NUL 2>&1
 support_files\adb start-server >NUL 2>&1
 support_files\adb wait-for-device
-support_files\adb shell rm /sdcard/PG05IMG.zip
+:rmrom
+echo Removing rom >>%log%
+cls
+echo ------------------------------
+echo            Unrooter            
+echo ------------------------------
+echo.
+echo Please wait...
+set tries=0
+set triestwo=0
+:rermrom
+echo Attempt "%triestwo%" >>%log%
+echo 
+set rm=NULL
+IF %triestwo% GEQ 1 (
+PING 1.1.1.1 -n 1 -w 5000 >NUL
+echo rm is "%rm%" >>%log%
+)
+IF %triestwo% GEQ 5 (
+cls
+echo ------------------------------
+echo            Unrooter            
+echo ------------------------------
+echo.
+echo I'm having issues removing the radio
+echo from the SD Card. Make sure the screen
+echo is on and unlocked!
+echo.
+echo Press enter to retry.
+pause >NUL
+goto rmrom
+)
+set /a triestwo= %tries%+1
+set tries=%triestwo%
+for /f "tokens=1 delims=" %%a in ( 'support_files\adb shell rm /sdcard/PG05IMG.zip' ) do ( set rm=%%a )
+echo rm right nao is "%rm%" >>%log%
+IF "%rm%" == "rm failed for /sdcard/PG05IMG.zip, Permission denied" (goto rermrom)
 cls
 echo ------------------------------
 echo            Unrooter            
 echo ------------------------------
 echo.
 echo Unroot complete!
-PING 1.1.1.1 -n 1 -w 4000 >NUL
+echo.
+echo You can now disable USB debugging 
+echo and stay awake.
+PING 1.1.1.1 -n 1 -w 5000 >NUL
 cls
 color 0b
 GOTO MAIN
@@ -1066,7 +1369,7 @@ echo ------------------------------
 echo          Install zip          
 echo ------------------------------
 echo.
-echo It appears thete was an error 
+echo It appears there was an error 
 echo pushing the file.
 echo.
 echo Please make sure Stay Awake and
@@ -1463,88 +1766,9 @@ echo ------------------------------
 echo        Busybox installer
 echo ------------------------------
 echo.
-IF NOT EXIST support_files\download\busybox (
-echo Downloading busybox...
-echo Getting busybox >>%log%
-support_files\wget -O support_files\download\busybox http://www.androidfilehost.com/main/Thunderbolt_Developers/trter10/busybox?param=test >>%log% 2>&1
-title                                            HTC Thunderbolt Tool %verno%
-echo.
-)
-IF "%adbrt%" == "Yes" (GOTO bboxrooted)
-echo  -Not ADB Rooted >>%log%
-cls
-echo ------------------------------
-echo        Busybox installer
-echo ------------------------------
-echo.
-echo Rebooting to recovery...
-echo.
-support_files\adb reboot recovery
-cls
-echo ------------------------------
-echo        Busybox installer
-echo ------------------------------
-echo.
-echo Waiting for recovery...
-echo.
-:waitforrecobbox
-IF EXIST support_files\here (del support_files\here)
-support_files\adb shell echo a>support_files\here 2>&1
-set here=NULL
-set /p here=<support_files\here
-if "%here%" NEQ "a" (GOTO waitforrecobbox)
-PING 1.1.1.1 -n 1 -w 4000 >NUL
-cls
-echo ------------------------------
-echo        Busybox installer
-echo ------------------------------
-echo.
-echo Working...
-echo Working >>%log%
-@echo on
-support_files\adb shell mount /system
-support_files\adb shell rm -r /system/xbin/busybox >>%log% 2>&1
-support_files\adb push support_files\download\busybox /system/xbin/ >>%log% 2>&1
-support_files\adb shell chown root.shell /system/xbin/busybox
-support_files\adb shell chmod 04755 /system/xbin/busybox
-support_files\adb shell "/system/xbin/busybox --install -s /system/xbin"
-support_files\adb reboot
-support_files\adb kill-server >NUL 2>&1
-support_files\adb start-server >NUL 2>&1
-@echo off
-pause
-cls
-echo ------------------------------
-echo        Busybox installer
-echo ------------------------------
-echo.
-echo Done! Phone is rebooting.
-PING 1.1.1.1 -n 1 -w 4000 >NUL
-GOTO EXTRAS
-:bboxrooted
-echo  -ADB Rooted >>%log%
-cls
-echo ------------------------------
-echo        Busybox installer
-echo ------------------------------
-echo.
-echo Working...
-echo Working >>%log%
-support_files\adb remount >>%log% 2>&1
-support_files\adb shell rm -r /system/xbin/busybox >>%log% 2>&1
-support_files\adb push support_files\download\busybox /system/xbin/ >>%log% 2>&1
-support_files\adb shell chown root.shell /system/xbin/busybox
-support_files\adb shell chmod 04755 /system/xbin/busybox
-support_files\adb shell ./system/xbin/busybox --install -s /system/xbin
-support_files\adb reboot
-support_files\adb kill-server >NUL 2>&1
-support_files\adb start-server >NUL 2>&1
-cls
-echo ------------------------------
-echo        Busybox installer
-echo ------------------------------
-echo.
-echo Done! Phone is rebooting.
+support_files\adb shell am start market://search?q=pname:stericson.busybox >>%log% 2>&1
+echo Please use the app that I am showing 
+echo on your phone to install.
 PING 1.1.1.1 -n 1 -w 4000 >NUL
 GOTO EXTRAS
 
@@ -1591,7 +1815,7 @@ echo.
 echo WARNING! This will delete all downloaded
 echo files and will clear all logs. Only use
 echo if you want to return the tool to how it
-echo was when you first ran it. 
+echo was when you first ran it!
 echo.
 set /p M=Press 1 to continue or enter to return. 
 color 0b
@@ -1616,6 +1840,7 @@ RMDIR "support_files\root" /S /Q >>%log%
 RMDIR "support_files\unroot" /S /Q >>%log%
 del support_files\RAN >>%log%
 del support_files\RAN1 >>%log%
+IF EXIST support_files\push (del support_files\push) >>%log%
 cls
 echo ------------------------------
 echo     Reset Thunderbolt Tool
