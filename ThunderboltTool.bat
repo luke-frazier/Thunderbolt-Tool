@@ -1,4 +1,3 @@
-
 ::  This program is free software: you can redistribute it and/or modify
 ::    it under the terms of the GNU General Public License as published by
 ::    the Free Software Foundation, either version 3 of the License, or
@@ -16,8 +15,8 @@
 @echo off
 SETLOCAL
 cls REM in case called by cmd
-set verno=v1.0.0
-set buildtime=November 12 2012, 1:38 AM EST
+set verno=v1.0.1
+set buildtime=November 24 2012, 2:13 AM EST
 title                                            HTC Thunderbolt Tool %verno%
 color 0b
 IF "%1" == "INFO" (
@@ -37,10 +36,8 @@ set log=logs\%date:~-4,4%%date:~-10,2%%date:~-7,2%_%hr%%time:~3,2%%time:~6,2%_%v
 IF NOT EXIST logs (MKDIR logs)
 echo Starting Thunderbolt Tool %verno% build %buildtime% at %date% %time% >%log%
 ::Making sure that we extracted correctly
-IF "%PATH%" NEQ "C:\WINDOWS\SYSTEM32" (
 echo Setting path >>%log%
-set path=C:\WINDOWS\SYSTEM32
-)
+set PATH=C:\WINDOWS\SYSTEM32
 set uze=no
 set sf=here
 set rm=here
