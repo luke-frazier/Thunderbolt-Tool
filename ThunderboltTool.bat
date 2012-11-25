@@ -35,14 +35,22 @@ if "%hr:~0,1%" equ " " set hr=0%hr:~1,1%
 set log=logs\%date:~-4,4%%date:~-10,2%%date:~-7,2%_%hr%%time:~3,2%%time:~6,2%_%verno%.log
 IF NOT EXIST logs (MKDIR logs)
 echo Starting Thunderbolt Tool %verno% build %buildtime% at %date% %time% >%log%
-::Making sure that we extracted correctly
-echo Setting path >>%log%
+::Set starting variables
 set PATH=C:\WINDOWS\SYSTEM32
 set uze=no
 set sf=here
 set rm=here
 set dv=here
 set modver=
+set romver=Unknown
+set romver1=Unknown
+set bootloader=Unknown
+set adbrt=Unknown
+set andver=Unknown
+set here=NULL
+set su=Unknown
+set sutest=Unknown
+::Making sure that we extracted correctly
 IF NOT EXIST Driver.exe (
 set dv=missing
 set uze=yes
@@ -56,6 +64,18 @@ set sf=missing
 set uze=yes
 )
 IF "%uze%" == "yes" (GOTO UNZIP-ERR)
+::Check our prop file
+::Code mercilously kanged from Vashypooh, the maintainer of the Kindle Fire Utility.
+
+for /f "tokens=2 delims==" %%a in ( 'support_files\cat support_files/definitions.prop ^| find /I "ServerMD5"' ) do ( set script-new-md5=%%a )
+::old code support_files\wget --quiet -O support_files\Script-server-MD5.txt http://www.androidfilehost.com/main/Thunderbolt_Developers/trter10/Script-server-MD5.txt?param=test
+::         set /p script-new-md5=<support_files\Script-server-MD5.txt >>%log%
+for /f "tokens=2 delims==" %%a in ( 'support_files\cat support_files/definitions.prop ^| find /I ""' ) do ( set =%%a )
+for /f "tokens=2 delims==" %%a in ( 'support_files\cat support_files/definitions.prop ^| find /I ""' ) do ( set =%%a )
+for /f "tokens=2 delims==" %%a in ( 'support_files\cat support_files/definitions.prop ^| find /I ""' ) do ( set =%%a )
+for /f "tokens=2 delims==" %%a in ( 'support_files\cat support_files/definitions.prop ^| find /I ""' ) do ( set =%%a )
+for /f "tokens=2 delims==" %%a in ( 'support_files\cat support_files/definitions.prop ^| find /I ""' ) do ( set =%%a )
+for /f "tokens=2 delims==" %%a in ( 'support_files\cat support_files/definitions.prop ^| find /I ""' ) do ( set =%%a )
 ::Other necessary actions
 IF NOT EXIST support_files\RAN1 (start README.txt)
 echo Program ran for first time. >support_files\RAN1
@@ -74,15 +94,11 @@ IF EXIST adb.exe (del adb.exe)
 IF EXIST support_files\Script-MD5.txt (del support_files\Script-MD5.txt)
 IF EXIST OTA.bat (MOVE OTA.bat support_files\OTA.bat) >NUL
 IF EXIST support_files\Script-server-MD5.txt (del support_files\Script-server-MD5.txt)
-::Building MD5 of current script
-:: Downloading latest MD5 Definitions
-support_files\wget --quiet -O support_files\Script-server-MD5.txt http://www.androidfilehost.com/main/Thunderbolt_Developers/trter10/Script-server-MD5.txt?param=test
 ::Checking to see if there's a new version...
 FOR /F "tokens=1 delims=" %%a in ( 'support_files\md5sums ThunderboltTool.bat' ) do ( set script-md5=%%a )
-set /p script-new-md5=<support_files\Script-server-MD5.txt >>%log%
-echo Server MD5 is: "%script-new-md5% ">>%log%
+echo Server MD5 is: "%script-new-md5%">>%log%
 echo Our MD5:  "%script-md5%">>%log%
-IF "%script-new-md5% " NEQ "%script-md5%" (
+IF "%script-new-md5%" NEQ "%script-md5%" (
 Echo Updating >>%log%
 GOTO OTA
 )
@@ -163,15 +179,7 @@ IF EXIST support_files\adbroot (del support_files\adbroot)
 IF EXIST support_files\bl (del support_files\bl)
 IF EXIST support_files\romver (del support_files\romver)
 IF EXIST support_files\here (del support_files\here)
-::In case of any odd errors
-set romver=Unknown
-set romver1=Unknown
-set bootloader=Unknown
-set adbrt=Unknown
-set andver=Unknown
-set here=NULL
-set su=Unknown
-set sutest=Unknown
+
 ::Seeing if phone is online
 IF EXIST support_files\here (del support_files\here)
 support_files\adb shell echo a>support_files\here 2>&1
