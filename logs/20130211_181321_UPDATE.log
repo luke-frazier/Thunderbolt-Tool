@@ -1,0 +1,21 @@
+Starting Thunderbolt Tool Updater at Mon 02/11/2013 18:13:21.39 
+-- 
+--2013-02-11 18:13:21--  http://www.androidfilehost.com/main/Thunderbolt_Developers/trter10/ThunderboltTool.bat?param=test
+Resolving www.androidfilehost.com... 192.211.52.109
+Connecting to www.androidfilehost.com|192.211.52.109|:80... connected.
+HTTP request sent, awaiting response... 301 Moved Permanently
+Location: http://old.androidfilehost.com/main/Thunderbolt_Developers/trter10/ThunderboltTool.bat?param=test [following]
+--2013-02-11 18:13:21--  http://old.androidfilehost.com/main/Thunderbolt_Developers/trter10/ThunderboltTool.bat?param=test
+Resolving old.androidfilehost.com... 192.211.52.108
+Connecting to old.androidfilehost.com|192.211.52.108|:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 69218 (68K) [application/x-msdownload]
+Saving to: `ThunderboltTool.bat'
+
+     0K .......... .......... .......... .......... .......... 73%  297K 0s
+    50K .......... .......                                    100% 1.49M=0.2s
+
+2013-02-11 18:13:21 (376 KB/s) - `ThunderboltTool.bat' saved [69218/69218]
+
+Our checksum is      "D1A2EAABD47FBD328454FD0EE0FE9FD7  ThunderboltTool.bat " 
+Correct checksum is  "D1A2EAABD47FBD328454FD0EE0FE9FD7  ThunderboltTool.bat" 

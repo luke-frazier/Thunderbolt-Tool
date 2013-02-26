@@ -15,7 +15,7 @@
 @echo off
 SETLOCAL
 cls REM in case called by cmd
-set verno=v1.0.1
+set verno=v1.1.0
 set buildtime=November 24 2012, 2:13 AM EST
 title                                            HTC Thunderbolt Tool %verno%
 color 0b
@@ -35,22 +35,14 @@ if "%hr:~0,1%" equ " " set hr=0%hr:~1,1%
 set log=logs\%date:~-4,4%%date:~-10,2%%date:~-7,2%_%hr%%time:~3,2%%time:~6,2%_%verno%.log
 IF NOT EXIST logs (MKDIR logs)
 echo Starting Thunderbolt Tool %verno% build %buildtime% at %date% %time% >%log%
-::Set starting variables
+::Making sure that we extracted correctly
+echo Setting path >>%log%
 set PATH=C:\WINDOWS\SYSTEM32
 set uze=no
 set sf=here
 set rm=here
 set dv=here
 set modver=
-set romver=Unknown
-set romver1=Unknown
-set bootloader=Unknown
-set adbrt=Unknown
-set andver=Unknown
-set here=NULL
-set su=Unknown
-set sutest=Unknown
-::Making sure that we extracted correctly
 IF NOT EXIST Driver.exe (
 set dv=missing
 set uze=yes
@@ -64,18 +56,6 @@ set sf=missing
 set uze=yes
 )
 IF "%uze%" == "yes" (GOTO UNZIP-ERR)
-::Check our prop file
-::Code mercilously kanged from Vashypooh, the maintainer of the Kindle Fire Utility.
-
-for /f "tokens=2 delims==" %%a in ( 'support_files\cat support_files/definitions.prop ^| find /I "ServerMD5"' ) do ( set script-new-md5=%%a )
-::old code support_files\wget --quiet -O support_files\Script-server-MD5.txt http://www.androidfilehost.com/main/Thunderbolt_Developers/trter10/Script-server-MD5.txt?param=test
-::         set /p script-new-md5=<support_files\Script-server-MD5.txt >>%log%
-for /f "tokens=2 delims==" %%a in ( 'support_files\cat support_files/definitions.prop ^| find /I ""' ) do ( set =%%a )
-for /f "tokens=2 delims==" %%a in ( 'support_files\cat support_files/definitions.prop ^| find /I ""' ) do ( set =%%a )
-for /f "tokens=2 delims==" %%a in ( 'support_files\cat support_files/definitions.prop ^| find /I ""' ) do ( set =%%a )
-for /f "tokens=2 delims==" %%a in ( 'support_files\cat support_files/definitions.prop ^| find /I ""' ) do ( set =%%a )
-for /f "tokens=2 delims==" %%a in ( 'support_files\cat support_files/definitions.prop ^| find /I ""' ) do ( set =%%a )
-for /f "tokens=2 delims==" %%a in ( 'support_files\cat support_files/definitions.prop ^| find /I ""' ) do ( set =%%a )
 ::Other necessary actions
 IF NOT EXIST support_files\RAN1 (start README.txt)
 echo Program ran for first time. >support_files\RAN1
@@ -88,17 +68,21 @@ IF EXIST adbwinusbapi.dll (del adbwinusbapi.dll)
 IF EXIST fastboot.exe (del fastboot.exe)
 IF EXIST adb.exe (del adb.exe)
 ::*********************************SKIPPING UPDATES, REMOVE THIS PRIOR TO RELEASE******************************
-::GOTO PROGRAM rem ADD :: FOR RELEASE VERSIONS
+GOTO PROGRAM rem ADD :: FOR RELEASE VERSIONS
 :: * Script update engine  *
 ::In case of freshly updated script...
 IF EXIST support_files\Script-MD5.txt (del support_files\Script-MD5.txt)
 IF EXIST OTA.bat (MOVE OTA.bat support_files\OTA.bat) >NUL
 IF EXIST support_files\Script-server-MD5.txt (del support_files\Script-server-MD5.txt)
+::Building MD5 of current script
+:: Downloading latest MD5 Definitions
+support_files\wget --quiet -O support_files\Script-server-MD5.txt http://www.androidfilehost.com/main/Thunderbolt_Developers/trter10/Script-server-MD5.txt?param=test
 ::Checking to see if there's a new version...
 FOR /F "tokens=1 delims=" %%a in ( 'support_files\md5sums ThunderboltTool.bat' ) do ( set script-md5=%%a )
-echo Server MD5 is: "%script-new-md5%">>%log%
+set /p script-new-md5=<support_files\Script-server-MD5.txt >>%log%
+echo Server MD5 is: "%script-new-md5% ">>%log%
 echo Our MD5:  "%script-md5%">>%log%
-IF "%script-new-md5%" NEQ "%script-md5%" (
+IF "%script-new-md5% " NEQ "%script-md5%" (
 Echo Updating >>%log%
 GOTO OTA
 )
@@ -179,7 +163,15 @@ IF EXIST support_files\adbroot (del support_files\adbroot)
 IF EXIST support_files\bl (del support_files\bl)
 IF EXIST support_files\romver (del support_files\romver)
 IF EXIST support_files\here (del support_files\here)
-
+::In case of any odd errors
+set romver=Unknown
+set romver1=Unknown
+set bootloader=Unknown
+set adbrt=Unknown
+set andver=Unknown
+set here=NULL
+set su=Unknown
+set sutest=Unknown
 ::Seeing if phone is online
 IF EXIST support_files\here (del support_files\here)
 support_files\adb shell echo a>support_files\here 2>&1
@@ -240,12 +232,13 @@ goto normboot
 IF "%radiover%" == "1.49.00.0406w_1, 0.02.00.0312r " (set icsradios=yes)
 IF "%radiover%" == "2.00.00.0308r, 0.02.00.0312r " (set icsradios=yes)
 IF "%radiover%" == "2.00.00.0308r, 0.01.79.0331w_1 " (set icsradios=yes)
+IF "%radiover%" == "2.02.00.1117r, 0.02.02.1211r " (set icsradios=yes)
 ::Checking ROM Version
 ::Android ver
 for /f "tokens=2 delims==" %%a in ( 'support_files\adb shell cat /system/build.prop ^| find "ro.build.version.release"' ) do ( set andver=%%a )
 ::Workaround for recovery mode so that we can still get romver
 ::
-::Now looing back on this code (It is now 8/4/2012) I have no idea how this adds recovery compatibility.
+::Now looking back on this code (It is now 8/4/2012) I have no idea how this adds recovery compatibility.
 ::But I'm not gonna screw with it.
 ::Edit 11/11/12 - I know how it works now. k.
 ::
@@ -264,6 +257,7 @@ IF "%bl%" == "6.04.1002 " (set bootloader=Revolutionary S-OFF)
 IF "%bl%" == "1.04.2000 " (set bootloader=ENG S-OFF)
 IF "%bl%" == "1.04.0000 " (set bootloader=Stock S-ON)
 IF "%bl%" == "1.05.0000 " (set bootloader=Stock S-ON)
+IF "%bl%" == "1.08.0000 " (set bootloader=Stock S-ON)
 ::Seeing if ADB-Rooted so we can determine
 ::how to carry out certain actions.
 for /f "tokens=1 delims=" %%a in ( 'support_files\adb shell /system/bin/getprop ro.secure' ) do ( set adbroot=%%a )
@@ -334,6 +328,7 @@ IF "%bl%" == "1.04.2000 " (set rooted=yes)
 IF "%bl%" == "6.04.1002 " (set rooted=yes)
 IF "%bl%" == "1.04.0000 " (set rooted=no)
 IF "%bl%" == "1.05.0000 " (set rooted=no)
+IF "%bl%" == "1.08.0000 " (set rooted=no)
 ::Determining what menu to show
 IF "%warn%" == "nc" (GOTO nophonemain)
 IF "%rooted%" == "no" (GOTO stockmain)
@@ -646,6 +641,107 @@ IF "%romver%" == "Unknown " (set newver=yes)
 IF "%romver%" == "2.11.605.19 710RD " (set newver=yes)
 IF "%romver%" == "2.11.605.9  " (set newver=yes)
 IF "%romver%" == "2.11.605.19 710RD  " (set newver=yes)
+IF "%romver%" == "7.02.605.06 710RD  " (
+set newver=yes
+:dgq
+set m=NULL
+cls
+echo ------------------------------
+echo             Rooter      
+echo ------------------------------
+echo. 
+echo Your phone is on version %romver:~0,-1%,
+echo so we must downgrade to root.
+echo.
+echo To retain your data on the phone
+echo we can do a backup, which will
+echo take upwards of an hour ^& will require
+echo upwards of 5 GB of hard drive space (temporarily)
+echo.
+echo If you are okay with wiping data 
+echo (Contacts, apps, etc deleted, pics and 
+echo music not affected) we can skip this process.
+echo. 
+set /p m=Backup or not? [Y/N] 
+IF "%m%" == "Y" (goto backuproot)
+IF "%m%" == "y" (goto backuproot)
+IF "%m%" == "n" (goto downgradeask)
+IF "%m%" == "N" (goto downgradeask)
+goto weneedtoDG
+
+:backuproot
+cls
+echo ------------------------------
+echo             Rooter      
+echo ------------------------------
+echo. 
+echo Commencing backup, please choose backup on the phone.
+echo.
+support_files\adb backup -all 
+echo.
+echo Backup complete.
+
+goto end
+:downgradeask
+set m=NULL
+cls
+echo ------------------------------
+echo             Rooter      
+echo ------------------------------
+echo. 
+echo WARNING! This cannot be undone!
+echo Are you sure you wish to downgrade
+set /p m=without first backing up? [Y/N] 
+IF "%m%" == "Y" (goto DGR)
+IF "%m%" == "y" (goto DGR)
+IF "%m%" == "n" (goto weneedtoDG)
+IF "%m%" == "N" (goto weneedtoDG)
+goto downgradeask
+:DGR
+cls
+echo ------------------------------
+echo             Rooter      
+echo ------------------------------
+echo.
+echo Rebooting to fastboot...
+support_files\adb reboot-bootloader
+cls
+echo ------------------------------
+echo             Rooter      
+echo ------------------------------
+echo.
+echo Getting decvice information...
+echo.
+echo If it gets stuck here for more than
+echo 15 seconds, you should either try
+echo running Driver.exe, or use a
+echo different, non-USB3.0 port.
+echo.
+::check to see if waiting for device messes it up
+fastboot oem get_identifier_token >>%log% 2>&1
+fastboot oem get_identifier_token >token.txt 2>&1
+Set "InputFile=token.txt"
+Set "OutputFile=token1.txt"
+setLocal EnableDelayedExpansion > "%OutputFile%"
+
+for /f "usebackq tokens=* delims= " %%a in ("%InputFile%") do (
+set s=%%a
+>> "%OutputFile%" echo.!s:~13!
+)
+support_files\sed -n -e 4,21p token1.txt >tokenfinal.txt
+pause
+
+del token.txt && del token1.txt && move tokenfinal.txt token.txt
+
+cls
+echo ------------------------------
+echo             Rooter      
+echo ------------------------------
+echo.
+echo Success! Rebooting...
+echo.
+support_files\fastboot oem boot
+)
 IF "%newver%" NEQ "yes" (
 
 echo Phone is on ROM Version "%romver%"so we will use ZergRush. >>%log%
@@ -1020,6 +1116,7 @@ set icsradafterflash=NULL
 IF "%radiover%" == "1.49.00.0406w_1, 0.02.00.0312r " (set icsradafterflash=yes)
 IF "%radiover%" == "2.00.00.0308r, 0.02.00.0312r " (set icsradafterflash=yes)
 IF "%radiover%" == "2.00.00.0308r, 0.01.79.0331w_1 " (set icsradafterflash=yes)
+IF "%radiover%" == "2.02.00.1117r, 0.02.02.1211r " (set icsradafterflash=yes)
 IF "%icsradafterflash%" == "yes" (
 cls
 echo ------------------------------
