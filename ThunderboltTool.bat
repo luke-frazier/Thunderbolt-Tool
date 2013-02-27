@@ -717,30 +717,43 @@ echo 15 seconds, you should either try
 echo running Driver.exe, or use a
 echo different, non-USB3.0 port.
 echo.
-::check to see if waiting for device messes it up
 fastboot oem get_identifier_token >>%log% 2>&1
-fastboot oem get_identifier_token >token.txt 2>&1
-Set "InputFile=token.txt"
-Set "OutputFile=token1.txt"
+fastboot oem get_identifier_token >support_files\root\token.txt 2>&1
+::Get our token in a clean text file
+Set "InputFile=support_files\root\token.txt"
+Set "OutputFile=support_files\root\token1.txt"
 setLocal EnableDelayedExpansion > "%OutputFile%"
-
 for /f "usebackq tokens=* delims= " %%a in ("%InputFile%") do (
 set s=%%a
->> "%OutputFile%" echo.!s:~13!
+>> "%OutputFile%" echo.!s:~13! rem // Trim off the first 13 chars of every line
 )
-support_files\sed -n -e 4,21p token1.txt >tokenfinal.txt
+support_files\sed -n -e 4,21p support_files\root\token1.txt >support_files\root\tokenfinal.txt rem // Trim off everything except for lines 4-21
 pause
+del support_files\root\token.txt
+del support_files\root\token1.txt 
+move support_files\root\tokenfinal.txt support_files\root\token.txt
 
-del token.txt && del token1.txt && move tokenfinal.txt token.txt
+::Make intruction text boxes 
+echo X = MsgBox("On the HTCDev website, please register for an account. Use a real email. Once logged in, click on unlock bootloader then get started. Select HTC Thunderbolt from the dropdown box and then click begin. Click yes, check the agreements, then click proceed. DO NOT FOLLOW THE STEPS ON THE NEXT PAGE, just click proceed at the bottom. Do this again for the next page. On the last page, disregard the directions and scroll to the bottom. Paste the contents of the text file that popped up behind this box into the Identifier Token field, then click submit. Download the file they email you and place it in the folder with ThunderboltTool.bat. I will take back over once the file is detected.",0+64+4096, "PLEASE READ - Message from trter10")>support_files\root\htcdev.vbs
+::Open website, token file, and box.
+START /MAX http://www.htcdev.com
+START support_files\root\token.txt
+START support_files\root\htcdev.vbs
 
 cls
 echo ------------------------------
 echo             Rooter      
 echo ------------------------------
 echo.
-echo Success! Rebooting...
+echo Searching for Unlock_code.bin...
+echo Please follow the instructions from 
+echo message box.
 echo.
-support_files\fastboot oem boot
+:relook
+PING 1.1.1.1 -n 1 -w 5000 >NUL
+IF NOT EXIST Unlock_code.bin (goto relook)
+
+::do some st00f
 )
 IF "%newver%" NEQ "yes" (
 
