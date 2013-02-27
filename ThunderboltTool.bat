@@ -15,7 +15,7 @@
 @echo off
 SETLOCAL
 cls REM in case called by cmd
-set verno=v1.0.1
+set verno=v1.1.0
 set buildtime=November 24 2012, 2:13 AM EST
 title                                            HTC Thunderbolt Tool %verno%
 color 0b
@@ -233,6 +233,7 @@ goto normboot
 IF "%radiover%" == "1.49.00.0406w_1, 0.02.00.0312r " (set icsradios=yes)
 IF "%radiover%" == "2.00.00.0308r, 0.02.00.0312r " (set icsradios=yes)
 IF "%radiover%" == "2.00.00.0308r, 0.01.79.0331w_1 " (set icsradios=yes)
+IF "%radiover%" == "2.02.00.1117r, 0.02.02.1211r " (set icsradios=yes)
 ::Checking ROM Version
 ::Android ver
 for /f "tokens=2 delims==" %%a in ( 'support_files\adb shell cat /system/build.prop ^| find "ro.build.version.release"' ) do ( set andver=%%a )
@@ -257,6 +258,7 @@ IF "%bl%" == "6.04.1002 " (set bootloader=Revolutionary S-OFF)
 IF "%bl%" == "1.04.2000 " (set bootloader=ENG S-OFF)
 IF "%bl%" == "1.04.0000 " (set bootloader=Stock S-ON)
 IF "%bl%" == "1.05.0000 " (set bootloader=Stock S-ON)
+IF "%bl%" == "1.08.0000 " (set bootloader=Stock S-ON)
 ::Seeing if ADB-Rooted so we can determine
 ::how to carry out certain actions.
 for /f "tokens=1 delims=" %%a in ( 'support_files\adb shell /system/bin/getprop ro.secure' ) do ( set adbroot=%%a )
@@ -327,6 +329,7 @@ IF "%bl%" == "1.04.2000 " (set rooted=yes)
 IF "%bl%" == "6.04.1002 " (set rooted=yes)
 IF "%bl%" == "1.04.0000 " (set rooted=no)
 IF "%bl%" == "1.05.0000 " (set rooted=no)
+IF "%bl%" == "1.08.0000 " (set rooted=no)
 ::Determining what menu to show
 IF "%warn%" == "nc" (GOTO nophonemain)
 IF "%rooted%" == "no" (GOTO stockmain)
@@ -1127,6 +1130,7 @@ set icsradafterflash=NULL
 IF "%radiover%" == "1.49.00.0406w_1, 0.02.00.0312r " (set icsradafterflash=yes)
 IF "%radiover%" == "2.00.00.0308r, 0.02.00.0312r " (set icsradafterflash=yes)
 IF "%radiover%" == "2.00.00.0308r, 0.01.79.0331w_1 " (set icsradafterflash=yes)
+IF "%radiover%" == "2.02.00.1117r, 0.02.02.1211r " (set icsradafterflash=yes)
 IF "%icsradafterflash%" == "yes" (
 cls
 echo ------------------------------
