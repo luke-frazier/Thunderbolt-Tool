@@ -2,9 +2,10 @@
 v1.1.0 - Unreleased
 -Added support for ICS OTA
 -Quicker reboots from fastboot mode
--Now checks for official ICS radios and downgrades if
- necessary
+-Now checks for official ICS radios and downgrades
+ if necessary
 -Fixed recovery mode support
+-Run me for email.bat no longer leaves full sys log
 
 ---------------------------------------------------
 v1.0.1 - 11/12/12

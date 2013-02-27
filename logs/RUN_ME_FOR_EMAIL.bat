@@ -13,12 +13,12 @@ echo -- NET USER -->>%log%
 net user >>%log%
 echo -- ATTEMPT PHONE LOG -- >>%log%
 echo Getting info from phone ...
-..\support_files\adb kill-server >>%log% 2>&1
+..\support_files\adb kill-server 
 ..\support_files\adb shell getprop >>%log% 2>&1
-..\support_files\adb kill-server >>%log% 2>&1
+..\support_files\adb kill-server 
 title **ZIPPING LOGS, DO NOT EXIT**
 cls
-echo Zipping logs ...
+echo Zipping logs, do not exit!
 ..\support_files\zip -j ..\logs\logs.zip ..\logs\*.log >NUL 2>&1
 del *.log
 cls
