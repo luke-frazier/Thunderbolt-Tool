@@ -617,7 +617,25 @@ copy support_files\AdbWinApi.dll support_files\root\AdbWinApi.dll >NUL
 copy support_files\AdbWinUsbApi.dll support_files\root\AdbWinUsbApi.dll >NUL
 echo copied >support_files\root\cp
 )
+
 :skipmv2
+::Get files for ics update if needed
+IF "%romver%" NEQ "7.02.605.06 710RD  " (goto icsskip)
+echo Getting ICS files >>%log%
+IF NOT EXIST support_files\download\ICSRoot.zip (GOTO geticsrooter)
+IF EXIST support_files\download\ICSRoot.zip.md5 (del support_files\download\ICSRoot.zip.md5)
+support_files\wget --quiet -O support_files\download\ICSRoot.zip.md5 http://www.androidfilehost.com/main/Thunderbolt_Developers/trter10/ICSRoot.zip.md5?param=test
+for /f "tokens=1 delims=" %%a in ( 'support_files\md5sums support_files\download\DowngradeBypass.zip' ) do ( set rootmd5=%%a )
+set /p DBzipMD5=<support_files\download\DowngradeBypass.zip.md5
+del support_files\download\DowngradeBypass.zip.md5
+echo Our checksum is     %icsmd5% >>%log%
+echo Correct checksum is %ICSzipMD5% >>%log%
+IF "%rootmd5%" NEQ "%DBzipMD5% " (
+:geticsrooter
+::Downloads pls
+goto :skipmv2
+)
+:icsskip
 echo Launching Rooter... >>%log%
 echo -- >>%log%
 color 0a
@@ -644,6 +662,7 @@ IF "%romver%" == "2.11.605.9  " (set newver=yes)
 IF "%romver%" == "2.11.605.19 710RD  " (set newver=yes)
 IF "%romver%" == "7.02.605.06 710RD  " (
 set newver=yes
+for /f "tokens=1 delims=" %%a in ( 'support_files\adb shell getprop ro.serialno' ) do ( set serialno=%%a )
 :dgq
 set m=NULL
 cls
@@ -735,7 +754,7 @@ del support_files\root\token1.txt
 move support_files\root\tokenfinal.txt support_files\root\token.txt
 
 ::Make intruction text boxes 
-echo X = MsgBox("On the HTCDev website, please register for an account. Use a real email. Once logged in, click on unlock bootloader then get started. Select HTC Thunderbolt from the dropdown box and then click begin. Click yes, check the agreements, then click proceed. DO NOT FOLLOW THE STEPS ON THE NEXT PAGE, just click proceed at the bottom. Do this again for the next page. On the last page, disregard the directions and scroll to the bottom. Paste the contents of the text file that popped up behind this box into the Identifier Token field, then click submit. Download the file they email you and place it in the folder with ThunderboltTool.bat. I will take back over once the file is detected.",0+64+4096, "PLEASE READ - Message from trter10")>support_files\root\htcdev.vbs
+echo X = MsgBox("On the HTCDev website, please register for an account. Use an email that you actually have access to. Once logged in, click on unlock bootloader then get started. Select HTC Thunderbolt from the dropdown box and then click begin. Click yes, check the agreements, then click proceed. DO NOT FOLLOW THE STEPS ON THE NEXT PAGE, just click proceed at the bottom. Do this again for the next page. On the last page, disregard the directions and scroll to the bottom. Paste the contents of the text file that popped up behind this box into the Identifier Token field, then click submit. Download the attatchment Unlock_code.bin from the email HTC sends you and place it in the folder with ThunderboltTool.bat. Do not follow other directions in the email. I will take back over once the file is detected.",0+64+4096, "PLEASE READ - Message from trter10")>support_files\root\htcdev.vbs
 ::Open website, token file, and box.
 START /MAX http://www.htcdev.com
 START support_files\root\token.txt
@@ -753,8 +772,92 @@ echo.
 :relook
 PING 1.1.1.1 -n 1 -w 5000 >NUL
 IF NOT EXIST Unlock_code.bin (goto relook)
-
-::do some st00f
+cls
+echo ------------------------------
+echo             Rooter      
+echo ------------------------------
+echo.
+echo Unlocking, please press volume up  
+echo then power to accept on the phone
+echo when it prompts you!
+echo.
+echo Press enter once you have unlocked.
+echo.
+support_files\fastboot flash unlocktoken Unlock_code.bin >>%log% 2>&1
+pause >NUL
+::Unimplemented, soon the tool will check for the code there before unlock and check the serialno and if it matches skip the code get instructions
+move Unlock_code.bin support_files\root\Unlock_code.bin
+echo "%serialno%" >support_files\root\ULC-SN
+cls
+echo ------------------------------
+echo             Rooter      
+echo ------------------------------
+echo.
+echo The phone should now be booting. 
+echo Please unplug the phone, remove the
+echo battery, then replace it. Hold volume up
+echo and then press power while still holding
+echo volume up. Do not let go until you see 
+echo the HBOOT screen. Once there, wait for 
+echo about 10 seconds, and hit the power button. 
+echo It should then switch to the FASTBOOT screen.
+echo Then, plug the phone back in.
+echo. 
+echo Waiting for device...
+support_files\fastboot flash recovery support_files\root\ICS\recovery.img >>%log% 2>&1
+support_files\fastboot oem gotohboot >>%log% 2>&1
+cls
+echo ------------------------------
+echo             Rooter      
+echo ------------------------------
+echo.
+echo Please wait about 10 seconds, then
+echo press volume down to select recovery
+echo and then press power. If it gets stuck
+echo on the white HTC screen for 20+ secs,
+echo Please unplug the phone, remove the
+echo battery, then replace it. Hold volume up
+echo and then press power while still holding
+echo volume up. Do not let go until you see 
+echo the HBOOT screen. Once there, wait about 
+echo 10 seconds, then press volume down to select recovery.
+echo.
+echo Waiting for recovery...
+:waitforrecoICS
+IF EXIST support_files\here (del support_files\here)
+support_files\adb shell echo a>support_files\here 2>&1
+set here=NULL
+set /p here=<support_files\here
+del support_files\here
+if "%here%" NEQ "a" (GOTO waitforrecoICS)
+PING 1.1.1.1 -n 1 -w 4000 >NUL
+cls
+echo ------------------------------
+echo             Rooter      
+echo ------------------------------
+echo.
+echo Patching main version with misctool,
+echo thanks con247 ^& drellisdee!
+support_files\adb push support_files\root\ICS\misctool /tmp/ >>%log% 2>&1
+support_files\adb shell chmod 777 /tmp/misctool
+support_files\adb shell /tmp/misctool w 1.00.000.0 >support_files\misc
+support_files\cat support_files/misc >>%log%
+support_files\cat support_files/misc
+for /f "tokens=1 delims=" %%a in ( 'support_files\md5sums support_files\misc' ) do ( set misc=%%a )
+del support_files\misc
+IF "%misc%" NEQ "03E25C5E0B06AD68AED1EAA0E393A872  support_files\misc " (
+cls
+echo ------------------------------
+echo             Rooter      
+echo ------------------------------
+echo.
+echo There was an error patching the main
+echo version. Please email me with the logs.
+echo.
+echo Press enter to exit...
+pause >NUL
+goto exit
+::st00f
 )
 IF "%newver%" NEQ "yes" (
 
@@ -963,7 +1066,7 @@ echo            Unrooter
 echo ------------------------------
 echo. 
 echo It appears that you are on the
-echo leaked ICS radios. You are on
+echo ICS radios. You are on
 echo "%radiover:~0,-1%".
 echo To unroot, we must first flash
 echo back down to Gingerbread radios.
