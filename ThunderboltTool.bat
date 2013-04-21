@@ -16,7 +16,7 @@
 SETLOCAL
 cls REM in case called by cmd
 set verno=v1.1.0
-set buildtime=November 24 2012, 2:13 AM EST
+set buildtime=April 21 2013, 2:13 AM EST
 title                                            HTC Thunderbolt Tool %verno%
 color 0b
 IF "%1" == "INFO" (
@@ -316,9 +316,9 @@ IF "%suver%" GEQ "3.1.1 " (set oldsu=- Up to date)
 cls
 ::Now to echo the output
 echo.
-echo Bootloader: %bl% %bootloader% >>%log%
+echo Bootloader: "%bl%" %bootloader% >>%log%
 echo ADB rooted: %adbrt% >>%log%
-echo ROM Version: %romver% - Android %andver% >>%log%
+echo ROM Version: "%romver%" - Android %andver% >>%log%
 echo Superuser: %sukind% binary v%suver% >>%log%
 echo -- >>%log%
 :skip
@@ -387,71 +387,26 @@ del support_files\bl
 FOR /F "tokens=2 delims= " %%a in ( 'echo %hbootver1%' ) do ( set hbootver=%%a )
 :fbsoff
 cls
-echo Loading fastboot menu for s-off>>%log%
-echo -- >>%log%
+echo Loading fastboot menu. >>%log%
 echo                 Welcome to the HTC Thunderbolt tool, by trter10.
 set m=NULL
 echo.
 echo Phone information: 
 echo.
-echo  You are S-%security%
+echo  You're S-%security%
 echo  Hboot: %hbootver%
 echo  Radio:%baseband%
 echo.
 echo  FASTBOOT MENU
 echo --------------------------------------------------------
-echo       1 - Boot menu
-echo       2 - About
-echo       R - Reload info
-echo       * Security warning fix coming soon!
+echo There are no functions for fastboot yet. Please power
+echo on the phone and then run the tool. If you cannot power
+echo on, please contact me.
 echo --------------------------------------------------------
-set /p m=Choose what you want to do or hit enter to exit. 
-IF "%M%" == "1" (GOTO SECWAR)
-IF "%M%" == "2" (GOTO FBBOOT)
-IF "%M%" == "3" (GOTO ABOUT)
-IF "%M%" == "r" (GOTO SKIPOTAEDIT)
-IF "%M%" == "R" (GOTO SKIPOTAEDIT)
-IF "%M%" == "NULL" (
-echo -- >>%log%
+echo Hit enter to exit. 
+pause >NUL
 GOTO EXIT
-)
-GOTO fbsoff
 
-:fbson
-cls
-echo Loading fastboot menu for s-on>>%log%
-echo -- >>%log%
-echo                 Welcome to the HTC Thunderbolt tool, by trter10.
-set m=NULL
-echo.
-echo Phone information: 
-echo.
-echo  S-%security%
-echo  Hboot %hbootver%
-echo  Radio%baseband%
-echo.
-echo  FASTBOOT MENU
-echo --------------------------------------------------------
-echo       1 - Recovery menu 
-echo       2 - Boot menu
-echo       3 - Extras menu
-echo       4 - Unroot
-echo       5 - About
-echo       R - Reload info
-echo --------------------------------------------------------
-set /p m=Choose what you want to do or hit enter to exit. 
-IF "%M%" == "1" (GOTO RECOVERY)
-IF "%M%" == "2" (GOTO BOOT)
-IF "%M%" == "3" (GOTO EXTRAS)
-IF "%M%" == "4" (GOTO UNROOT)
-IF "%M%" == "5" (GOTO ABOUT)
-IF "%M%" == "r" (GOTO SKIPOTAEDIT)
-IF "%M%" == "R" (GOTO SKIPOTAEDIT)
-IF "%M%" == "NULL" (
-echo -- >>%log%
-GOTO EXIT
-)
-GOTO fbsoff
 
 :SECWAR
 
@@ -560,7 +515,7 @@ echo Waiting for device connection...
 echo.
 :nophonemain2
 ::I can't use a FOR /F here, because if I do it prints "error: device not found" repeatedly
-::So we will do it manually
+::So it will be done manually
 set here=NULL
 support_files\adb shell echo a>support_files\here 2>&1
 set /p here=<support_files\here
@@ -610,7 +565,7 @@ IF NOT EXIST support_files\root (
 echo Unzipping rooter files... >>%log%
 support_files\unzip support_files\download\DowngradeBypass.zip -d support_files\root >>%log% 2>&1
 )
-IF EXIST support_files\root\cp (GOTO skipmv2)
+IF EXIST support_files\root\cp (GOTO icsskip)
 IF EXIST support_files\root (
 echo Running rooter hotfix >>%log%
 copy support_files\AdbWinApi.dll support_files\root\AdbWinApi.dll >NUL
@@ -634,7 +589,7 @@ cls
 echo ------------------------------
 echo             Rooter      
 echo ------------------------------
-echo. 
+echo.
 for /f "tokens=1 delims=" %%a in ( 'support_files\adb root' ) do ( set rooted=%%a )
 IF "%rooted%"=="adbd is already running as root " (GOTO SUCCESSFUL)
 set newver=no
@@ -643,7 +598,10 @@ IF "%romver%" == "Unknown " (set newver=yes)
 IF "%romver%" == "2.11.605.19 710RD " (set newver=yes)
 IF "%romver%" == "2.11.605.9  " (set newver=yes)
 IF "%romver%" == "2.11.605.19 710RD  " (set newver=yes)
-IF "%romver%" == "7.02.605.06 710RD  " (
+IF "%romver%" == "7.02.605.06 710RD  " (goto icsfix)
+IF "%romver%" == "7.02.605.10 710RD  " (goto icsfix)
+goto icsfixend
+:icsfix
 set newver=yes
 for /f "tokens=1 delims=" %%a in ( 'support_files\adb shell getprop ro.serialno' ) do ( set serialno=%%a )
 :dgq
@@ -654,11 +612,11 @@ echo ------------------------------
 echo             Rooter      
 echo ------------------------------
 echo. 
-echo Your phone is on version %romver:~0,-1%,
+echo Your phone is on version %romver:~0,-2%,
 echo so we must downgrade to root.
 echo.
 echo YOUR PHONE MUST HAVE AT LEAST 
-echo 75% BATTERY TO CONTINUE!
+echo 75^% BATTERY TO CONTINUE!
 echo.
 echo To retain your data on the phone
 echo we can do a backup, which will
@@ -674,7 +632,7 @@ IF "%m%" == "Y" (goto backuproot)
 IF "%m%" == "y" (goto backuproot)
 IF "%m%" == "n" (goto downgradeask)
 IF "%m%" == "N" (goto downgradeask)
-goto weneedtoDG
+goto dgq
 
 :backuproot
 cls
@@ -687,7 +645,14 @@ echo Commencing backup, please choose backup on the phone.
 echo.
 support_files\adb backup -all 
 echo.
+cls
+echo Done >>%log%
+echo ------------------------------
+echo             Rooter      
+echo ------------------------------
+echo. 
 echo Backup complete.
+echo.
 echo Warning! There is always a possibility of error!
 echo Please ensure there were no errors and that the
 echo backup.ab file in this folder is quite large. If
@@ -786,27 +751,28 @@ echo 15 seconds, you should either try
 echo running Driver.exe, or use a
 echo different, non-USB3.0 port.
 echo.
-support_files\fastboot oem get_identifier_token >>%log% 2>&1
 support_files\fastboot oem get_identifier_token >support_files\root\token.txt 2>&1
+support_files\cat support_files/root/token.txt >>%log% 
 ::Get our token in a clean text file
 Set "InputFile=support_files\root\token.txt"
 Set "OutputFile=support_files\root\token1.txt"
 setLocal EnableDelayedExpansion > "%OutputFile%"
 for /f "usebackq tokens=* delims= " %%a in ("%InputFile%") do (
 set s=%%a
->> "%OutputFile%" echo.!s:~13! rem // Trim off the first 13 chars of every line
+::Trim off the first 4 chars of every line
+>> "%OutputFile%" echo.!s:~4!
 )
-support_files\sed -n -e 4,21p support_files\root\token1.txt >support_files\root\tokenfinal.txt rem // Trim off everything except for lines 4-21
-pause
-del support_files\root\token.txt
-del support_files\root\token1.txt 
-move support_files\root\tokenfinal.txt support_files\root\token.txt
+::Trim off everything except for lines 4-21
+support_files\sed -n -e 4,21p support_files\root\token1.txt >support_files\root\tokenfinal.txt
+del support_files\root\token.txt >NUL 2>&1
+del support_files\root\token1.txt >NUL 2>&1
 
 ::Make intruction text boxes 
-echo X = MsgBox("On the HTCDev website, please register for an account. Use an email that you actually have access to. Once logged in, click on unlock bootloader then get started. Select HTC Thunderbolt from the dropdown box and then click begin. Click yes, check the agreements, then click proceed. DO NOT FOLLOW THE STEPS ON THE NEXT PAGE, just click proceed at the bottom. Do this again for the next page. On the last page, disregard the directions and scroll to the bottom. Paste the contents of the text file that popped up behind this box into the Identifier Token field, then click submit. Download the attatchment Unlock_code.bin from the email HTC sends you and place it in the folder with ThunderboltTool.bat. Do not follow other directions in the email. I will take back over once the file is detected.",0+64+4096, "PLEASE READ - Message from trter10")>support_files\root\htcdev.vbs
+echo X = MsgBox("On the HTCDev website, please register for an account. Use an email that you actually have access to. Once logged in, click on unlock bootloader then get started. Select HTC Thunderbolt from the dropdown box and then click begin. Click yes, check the agreements, then click proceed. DO NOT FOLLOW THE STEPS ON THE NEXT PAGE, just click proceed at the bottom. Do this again for the next page. On the last page, disregard the directions and scroll to the bottom. Paste the contents of the text file that popped up behind this box into the Identifier Token field, then click submit. DO NOT CLICK THE LINK IN THE EMAIL HTC SENDS YOU, download the ATTACHMENT Unlock_code.bin and place it in the folder with ThunderboltTool.bat. Do not follow other directions in the email. I will take back over once the file is detected.",0+64+4096, "PLEASE READ - Message from trter10")>support_files\root\htcdev.vbs
 ::Open website, token file, and box.
 START /MAX http://www.htcdev.com
-START support_files\root\token.txt
+PING 1.1.1.1 -n 1 -w 3000 >NUL
+START support_files\root\tokenfinal.txt
 START support_files\root\htcdev.vbs
 echo Searching for Unlock_code.bin... >>%log%
 cls
@@ -827,8 +793,8 @@ echo ------------------------------
 echo             Rooter      
 echo ------------------------------
 echo.
-echo Unlocking, please press accept on 
-echo the phone when it prompts you!
+echo Unlocking, please press volume up then  
+echo power to accept on the phone when it prompts you.
 echo.
 echo Press enter once you have unlocked.
 echo.
@@ -844,9 +810,9 @@ echo ------------------------------
 echo.
 echo The phone should now be booting or is already 
 echo booted. Please unplug the phone, remove the
-echo battery, then replace it. Hold volume up
+echo battery, then replace it. Hold volume down
 echo and then press power while still holding
-echo volume up. Do not let go until you see 
+echo volume down. Do not let go until you see 
 echo the HBOOT screen. Once there, wait for 
 echo about 10 seconds, and hit the power button. 
 echo It should then switch to the FASTBOOT screen.
@@ -863,12 +829,12 @@ echo ------------------------------
 echo.
 echo Please wait about 10 seconds, then
 echo press volume down to select recovery
-echo and then press power. If it gets stuck
+echo and then press power. IF AND ONLY IF it gets stuck
 echo on the white HTC screen for 20+ secs,
 echo please unplug the phone, remove the
-echo battery, then replace it. Hold volume up
+echo battery, then replace it. Hold volume down
 echo and then press power while still holding
-echo volume up. Do not let go until you see 
+echo volume down. Do not let go until you see 
 echo the HBOOT screen. Once there, wait about 
 echo 10 seconds, then press volume down to select recovery.
 echo.
@@ -895,9 +861,11 @@ support_files\adb shell chmod 777 /tmp/misctool
 support_files\adb shell /tmp/misctool w 1.00.000.0 >support_files\misc
 support_files\cat support_files/misc >>%log%
 support_files\cat support_files/misc
-for /f "tokens=1 delims=" %%a in ( 'support_files\md5sums support_files\misc' ) do ( set misc=%%a )
+for /f "tokens=1 delims=" %%a in ( 'support_files\cat support_files\misc' ) do ( set misc=%%a )
 del support_files\misc
-IF "%misc%" NEQ "03E25C5E0B06AD68AED1EAA0E393A872  support_files\misc " (
+IF "%misc%" == "7.02.605.06 " (set miscerr=1)
+IF "%misc%" == "7.02.605.10 " (set miscerr=1)
+IF "%miscerr%" == "1" (
 echo Error! >>%log%
 cls
 echo ------------------------------
@@ -911,14 +879,34 @@ echo Press enter to exit...
 pause >NUL
 goto exit
 )
-:REPUSHroot
 echo Success >>%log%
 cls
 echo ------------------------------
 echo             Rooter      
 echo ------------------------------
 echo.
-echo Main version patch successful!
+echo Main version patch successful^!
+echo.
+echo Rebooting....
+support_files\adb reboot
+cls
+echo ------------------------------
+echo             Rooter      
+echo ------------------------------
+echo.
+echo Once the phone boots, go through the
+echo activation menu, enable USB Debugging,
+echo charge only, and stay awake, and I will
+echo take over again.
+echo.
+echo Waiting for device...
+support_files\adb wait-for-device
+:REPUSHroot
+cls
+echo ------------------------------
+echo             Rooter      
+echo ------------------------------
+echo.
 echo Pushing downgrade file to SD card, 
 echo This will take a few minutes...
 echo.
@@ -955,11 +943,24 @@ echo ------------------------------
 echo             Rooter            
 echo ------------------------------
 echo.
-echo Rebooting to fastboot...
+echo Rebooting to fastboot and relocking...
 echo Rebooting to fastboot >>%log%
 support_files\adb reboot-bootloader
-echo Switching to hboot >>%log%
-support_files\fastboot oem gotohboot >>%log% 2>&1
+echo Relocking >>%log%
+support_files\fastboot oem lock >>%log%
+cls
+echo ------------------------------
+echo             Rooter      
+echo ------------------------------
+echo.
+echo The phone should now be booting.
+echo Please unplug the phone, remove the
+echo battery, then replace it. Hold volume down
+echo and then press power while still holding
+echo volume down. Do not let go until you see 
+echo the HBOOT screen. Once there, press enter.
+echo. 
+pause >NUL
 cls
 echo ------------------------------
 echo             Rooter            
@@ -1027,7 +1028,7 @@ set tries=%triestwo%
 for /f "tokens=1 delims=" %%a in ( 'support_files\adb shell rm /sdcard/PG05IMG.zip' ) do ( set rm=%%a )
 echo rm right nao is "%rm%" >>%log%
 IF "%rm%" == "rm failed for /sdcard/PG05IMG.zip, Permission denied " (goto rermroot)
-)
+cls
 IF "%newver%" NEQ "yes" (
 
 echo Phone is on ROM Version "%romver%"so we will use ZergRush. >>%log%
@@ -1088,6 +1089,7 @@ support_files\adb kill-server >NUL 2>&1
 support_files\adb start-server >NUL 2>&1
 echo.
 for /f "tokens=1 delims=" %%a in ( 'support_files\adb shell getprop ro.serialno' ) do ( set serialno=%%a )
+for /f "tokens=1 delims=" %%a in ( 'support_files\adb shell /system/bin/getprop ro.bootloader' ) do ( set bl=%%a )
 echo X = MsgBox("On the revolutionary website, please scroll down to Download for Windows. Click that button, then cancel the download. Enter your phone's information in the prompts that pop up. The info you need is: Seiral Number: %serialno% Hboot version: %bl% Once you do that, copy your beta key from the website, then paste it into the Revolutionary window. To paste it, right click the title bar of the Revolutionary window then click edit then click paste. If there are two revolutionary windows, you can close one. Please note that for Revolutionary to work you need to uninstall Droid Explorer if you have it. Thanks!",0+64+4096, "PLEASE READ - Message from trter10")>support_files\root\rev.vbs
 echo X = MsgBox("Please note that you need to enter Y to download and flash CWM recovery at the end of Revolutionary (If it sticks at waiting for fastboot or rebooting to fastboot once moar make sure you have ran the driver and try unplugging and replugging in the phone.) After Revolutionary completes and CWM is flashed, using the volume buttons to navigate and power to select, you will need to exit fastboot by selecting bootloader, waiting a few seconds, then selecting recovery. Then, CWM will automatically install superuser and reboot.",0+64+4096, "PLEASE READ - Message from trter10")>>support_files\root\rev.vbs
 :su-no-ota

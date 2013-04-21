@@ -27,7 +27,8 @@ You can always open this file again. It's named README.txt.
 
       *Make sure USB Debugging AND STAY AWAKE are
  enabled in Settings >
-       Apps > Development.
+       Apps > Development. If you are on ICS, it 
+       is under Settings > Developer Options.
 
       *Make sure HTC Sync, DoubleTwist, EasyTether,
  Droid Explorer, etc.
