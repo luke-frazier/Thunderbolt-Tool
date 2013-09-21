@@ -591,17 +591,7 @@ echo             Rooter
 echo ------------------------------
 echo.
 set romver="7.02.605.10 710RD  "
-echo ###ROMVER SET TO %romver%### >>%log%
-for /f "tokens=1 delims=" %%a in ( 'support_files\adb root' ) do ( set rooted=%%a )
-::IF "%rooted%"=="adbd is already running as root " (GOTO SUCCESSFUL)
-set newver=no
-IF "%romver%" == "2.11.605.9 " (set newver=yes)
-IF "%romver%" == "Unknown " (set newver=yes)
-IF "%romver%" == "2.11.605.19 710RD " (set newver=yes)
-IF "%romver%" == "2.11.605.9  " (set newver=yes)
-IF "%romver%" == "2.11.605.19 710RD  " (set newver=yes)
-IF "%romver%" == "7.02.605.06 710RD  " (goto icsfix)
-IF "%romver%" == "7.02.605.10 710RD  " (goto icsfix)
+goto icsfix
 goto icsfixend
 :icsfix
 set newver=yes
