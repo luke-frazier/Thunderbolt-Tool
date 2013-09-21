@@ -590,10 +590,8 @@ echo ------------------------------
 echo             Rooter      
 echo ------------------------------
 echo.
-set romver="7.02.605.10 710RD  "
-goto icsfix
-goto icsfixend
 :icsfix
+echo We need to downgrade. >>%log%
 set newver=yes
 for /f "tokens=1 delims=" %%a in ( 'support_files\adb shell getprop ro.serialno' ) do ( set serialno=%%a )
 :dgq
